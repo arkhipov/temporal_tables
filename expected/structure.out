@@ -1,0 +1,118 @@
+CREATE TABLE structure (a bigint, "b b" date, d text, sys_period tstzrange);
+CREATE TABLE structure_history (like structure);
+CREATE TRIGGER versioning_trigger
+BEFORE INSERT OR UPDATE OR DELETE ON structure
+FOR EACH ROW EXECUTE PROCEDURE versioning('sys_period', 'structure_history', false);
+-- Insert.
+BEGIN;
+INSERT INTO structure (a, "b b", d) VALUES (1, '2000-01-01', 'test');
+SELECT a, "b b", d FROM structure ORDER BY a, sys_period;
+ a |    b b     |  d   
+---+------------+------
+ 1 | 01-01-2000 | test
+(1 row)
+
+SELECT * FROM structure_history ORDER BY a, sys_period;
+ a | b b | d | sys_period 
+---+-----+---+------------
+(0 rows)
+
+COMMIT;
+-- Update.
+BEGIN;
+UPDATE structure SET d = 'blah' WHERE a = 1;
+SELECT a, "b b", d FROM structure ORDER BY a, sys_period;
+ a |    b b     |  d   
+---+------------+------
+ 1 | 01-01-2000 | blah
+(1 row)
+
+SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
+ a |    b b     |  d   
+---+------------+------
+ 1 | 01-01-2000 | test
+(1 row)
+
+COMMIT;
+-- Drop column in the versioned table.
+ALTER TABLE structure DROP COLUMN d;
+-- Update.
+BEGIN;
+UPDATE structure SET "b b" = '2001-01-01' WHERE a = 1;
+SELECT a, "b b" FROM structure ORDER BY a, sys_period;
+ a |    b b     
+---+------------
+ 1 | 01-01-2001
+(1 row)
+
+SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
+ a |    b b     |  d   
+---+------------+------
+ 1 | 01-01-2000 | test
+ 1 | 01-01-2000 | 
+(2 rows)
+
+COMMIT;
+-- Add column to the versioned table.
+ALTER TABLE structure ADD COLUMN e text;
+-- Update.
+BEGIN;
+UPDATE structure SET e = 'test' WHERE a = 1;
+SELECT a, "b b", e FROM structure ORDER BY a, sys_period;
+ a |    b b     |  e   
+---+------------+------
+ 1 | 01-01-2001 | test
+(1 row)
+
+SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
+ a |    b b     |  d   
+---+------------+------
+ 1 | 01-01-2000 | test
+ 1 | 01-01-2000 | 
+ 1 | 01-01-2001 | 
+(3 rows)
+
+COMMIT;
+-- Add column in the history table.
+ALTER TABLE structure_history ADD COLUMN e text;
+-- Update.
+BEGIN;
+UPDATE structure SET e = 'test2' WHERE a = 1;
+SELECT a, "b b", e FROM structure ORDER BY a, sys_period;
+ a |    b b     |   e   
+---+------------+-------
+ 1 | 01-01-2001 | test2
+(1 row)
+
+SELECT a, "b b", d, e FROM structure_history ORDER BY a, sys_period;
+ a |    b b     |  d   |  e   
+---+------------+------+------
+ 1 | 01-01-2000 | test | 
+ 1 | 01-01-2000 |      | 
+ 1 | 01-01-2001 |      | 
+ 1 | 01-01-2001 |      | test
+(4 rows)
+
+COMMIT;
+-- Drop column in the history table.
+ALTER TABLE structure_history DROP COLUMN "b b";
+-- Update.
+BEGIN;
+UPDATE structure SET "b b" = '2012-01-01' WHERE a = 1;
+SELECT a, "b b", e FROM structure ORDER BY a, sys_period;
+ a |    b b     |   e   
+---+------------+-------
+ 1 | 01-01-2012 | test2
+(1 row)
+
+SELECT a, d, e FROM structure_history ORDER BY a, sys_period;
+ a |  d   |   e   
+---+------+-------
+ 1 | test | 
+ 1 |      | 
+ 1 |      | 
+ 1 |      | test
+ 1 |      | test2
+(5 rows)
+
+COMMIT;
