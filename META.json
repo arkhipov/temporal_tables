@@ -19,12 +19,20 @@
    "prereqs": {
       "runtime": {
          "requires": {
-            "PostgreSQL": "9.2.0"
+            "PostgreSQL": ">= 9.2.0"
          }
       }
    },
    "resources": {
-      "homepage": "http://www.softus.org"
+      "homepage": "http://www.softus.org",
+      "repository": {
+         "url": "https://github.com/arkhipov/temporal_tables.git",
+         "web": "https://github.com/arkhipov/temporal_tables",
+         "type": "git"
+      },
+      "bugtracker": {
+         "web": "https://github.com/arkhipov/temporal_tables/issues"
+      }
    },
    "generated_by": "Vladislav Arkhipov",
    "meta-spec": {
