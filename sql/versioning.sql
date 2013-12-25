@@ -38,7 +38,7 @@ COMMIT;
 BEGIN;
 
 UPDATE versioning SET a = 5 WHERE a = 4;
-UPDATE versioning SET "b b" = CURRENT_DATE WHERE a = 5;
+UPDATE versioning SET "b b" = '2012-01-01' WHERE a = 5;
 
 SELECT a, "b b", lower(sys_period) = CURRENT_TIMESTAMP FROM versioning ORDER BY a, sys_period;
 
