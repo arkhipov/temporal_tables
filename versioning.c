@@ -11,6 +11,7 @@
 #include <math.h>
 #include <float.h>
 
+#include "access/htup_details.h"
 #include "access/xact.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_type.h"
