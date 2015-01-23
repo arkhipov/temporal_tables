@@ -2,7 +2,7 @@
  *
  * versioning.c
  *
- * Copyright (c) 2012, Vladislav Arkhipov <vlad@arkhipov.ru>
+ * Copyright (c) 2012, 2013, 2014 Vladislav Arkhipov <vlad@arkhipov.ru>
  *
  * -------------------------------------------------------------------------
  */
@@ -11,7 +11,9 @@
 #include <math.h>
 #include <float.h>
 
+#if PG_VERSION_NUM >= 90300
 #include "access/htup_details.h"
+#endif
 #include "access/xact.h"
 #include "catalog/namespace.h"
 #include "catalog/pg_type.h"
