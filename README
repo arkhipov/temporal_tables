@@ -7,7 +7,8 @@ Temporal Tables Extension
 4. Usage
 5. Examples and hints
 6. Performance benchmarks
-7. Notes
+7. Tutorials
+8. Notes
 
 1. Introduction
 ===============
@@ -370,7 +371,14 @@ deleted the current row:
 
 TODO
 
-7. Notes
+7. Tutorials
+============
+
+Using and querying temporal tables in PostgreSQL
+
+http://clarkdave.net/2015/02/historical-records-with-postgresql-and-temporal-tables-and-sql-2011/
+
+8. Notes
 ========
 
 Temporal Tables Extension is distributed under the terms of BSD 2-clause
