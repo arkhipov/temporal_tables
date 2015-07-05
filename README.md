@@ -1,16 +1,9 @@
 Temporal Tables Extension
 =========================
 
-1. Introduction
-2. Requirements
-3. Installation
-4. Usage
-5. Examples and hints
-6. Performance benchmarks
-7. Tutorials
-8. Notes
+[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables)
 
-1. Introduction
+Introduction
 ===============
 
 A temporal table is a table that records the period of time when a row is valid.
@@ -40,60 +33,60 @@ only.
 Additional information on temporal databases can be found at the following
 sites:
 
-1. http://en.wikipedia.org/wiki/Temporal_database
-2. http://www.cs.arizona.edu/~rts/tdbbook.pdf
-3. http://metadata-standards.org/Document-library/Documents-by-number/WG2-N1501-N1550/WG2_N1536_koa046-Temporal-features-in-SQL-standard.pdf
+1. [Wikipedia: Temporal Database](http://en.wikipedia.org/wiki/Temporal_database)
+2. [Developing Time-Oriented Database Applications in SQL, Richard T. Snodgrass, Morgan Kaufmann Publishers, Inc., San Francisco, July, 1999, 504+xxiii pages, ISBN 1-55860-436-7.](http://www.cs.arizona.edu/~rts/tdbbook.pdf)
+3. [WG2 N1536. WG3: KOA-046. Temporal Features in SQL standard. Krishna Kulkarni,. IBM Corporation](http://metadata-standards.org/Document-library/Documents-by-number/WG2-N1501-N1550/WG2_N1536_koa046-Temporal-features-in-SQL-standard.pdf)
 
-2. Requirements
+Requirements
 ===============
 
 Temporal Tables Extension requires PostgreSQL 9.2 or higher.
 
-3. Installation
+Installation
 ===============
 
 To build it, just do this:
 
-  $ make
-  $ make install
-  $ make installcheck
+    $ make
+    $ make install
+    $ make installcheck
 
 If you encounter an error such as:
 
-  "Makefile", line 8: Need an operator
+    "Makefile", line 8: Need an operator
 
 You need to use GNU make, which may well be installed on your system as gmake:
 
-  $ gmake
-  $ gmake install
-  $ gmake installcheck
+    $ gmake
+    $ gmake install
+    $ gmake installcheck
 
 If you encounter an error such as:
 
-  make: pg_config: Command not found
+    make: pg_config: Command not found
 
 Be sure that you have pg_config installed and in your path.  If you used a
 package management system such as RPM to install PostgreSQL, be sure that the
 -devel package is also installed.  If necessary tell the build process where to
 find it:
 
-  $ env PG_CONFIG=/path/to/pg_config make && make install && make installcheck
+    $ env PG_CONFIG=/path/to/pg_config make && make install && make installcheck
 
 If you encounter an error such as:
 
-  ERROR: must be owner of database regression
+    ERROR: must be owner of database regression
 
 You need to run the test suite using a super user, such as the default
 "postgres" super user:
 
-  $ make installcheck PGUSER=postgres
+    $ make installcheck PGUSER=postgres
 
 Once the extension is installed, you can add it to a database.  Connect to a
 database as a super user and do this:
 
-  $ CREATE EXTENSION temporal_tables;
+    $ CREATE EXTENSION temporal_tables;
 
-4. Usage
+Usage
 ========
 
 Creating a system-period temporal table
@@ -102,7 +95,7 @@ Creating a system-period temporal table
 Temporal Tables Extension uses a general trigger function to maintain
 system-period temporal tables behaviour:
 
-  versioning(<system_period_column_name>, <history_table_name>, <adjust>)
+    versioning(<system_period_column_name>, <history_table_name>, <adjust>)
 
 The function must be fired before INSERT or UPDATE or DELETE on a
 system-period temporal table.  You are to specify a system period column name, a
@@ -113,22 +106,28 @@ Let's have a look at a simple example.
 
 First, create a table:
 
-  CREATE TABLE employees
-  (
-    name text NOT NULL PRIMARY KEY,
-    department text,
-    salary numeric(20, 2)
-  );
+```SQL
+CREATE TABLE employees
+(
+  name text NOT NULL PRIMARY KEY,
+  department text,
+  salary numeric(20, 2)
+);
+```
 
 In order to make this table system-period temporal table we should first add a
 system period column:
 
-  ALTER TABLE employees ADD COLUMN sys_period tstzrange NOT NULL;
+```SQL
+ALTER TABLE employees ADD COLUMN sys_period tstzrange NOT NULL;
+```
 
 Then we need a history table that contains archived rows of our table.  The
 easiest way to create it is by using LIKE statement:
 
-  CREATE TABLE employees_history (LIKE employees);
+```SQL
+CREATE TABLE employees_history (LIKE employees);
+```
 
 Note that a history table does not have to have the same structure as the
 original one.  For example, you may want to archive some columns of an original
@@ -143,11 +142,13 @@ history table are:
 
 Finally we create a trigger on our table to link it with the history table:
 
-  CREATE TRIGGER versioning_trigger
-  BEFORE INSERT OR UPDATE OR DELETE ON employees
-  FOR EACH ROW EXECUTE PROCEDURE versioning('sys_period',
-                                            'employees_history',
-                                            true);
+```SQL
+CREATE TRIGGER versioning_trigger
+BEFORE INSERT OR UPDATE OR DELETE ON employees
+FOR EACH ROW EXECUTE PROCEDURE versioning('sys_period',
+                                          'employees_history',
+                                          true);
+```
 
 Inserting data
 --------------
@@ -156,27 +157,29 @@ For a user inserting data into a system-period temporal table is similar to
 inserting data into a regular table.  For example, the following data was
 inserted on August 8, 2006 to the table employees:
 
-  INSERT INTO employees (name, department, salary)
-  VALUES ('Bernard Marx', 'Hatchery and Conditioning Centre', 10000);
+```SQL
+INSERT INTO employees (name, department, salary)
+VALUES ('Bernard Marx', 'Hatchery and Conditioning Centre', 10000);
 
-  INSERT INTO employees (name, department, salary)
-  VALUES ('Lenina Crowne', 'Hatchery and Conditioning Centre', 7000);
+INSERT INTO employees (name, department, salary)
+VALUES ('Lenina Crowne', 'Hatchery and Conditioning Centre', 7000);
 
-  INSERT INTO employees (name, department, salary)
-  VALUES ('Helmholtz Watson', 'College of Emotional Engineering', 18500);
+INSERT INTO employees (name, department, salary)
+VALUES ('Helmholtz Watson', 'College of Emotional Engineering', 18500);
+```
 
 The employees table now contains the following data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ --------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [2006-08-08, )
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [2006-08-08, )
-  Helmholtz Watson College of Emotional Engineering  18500 [2006-08-08, )
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [2006-08-08, )
+  Lenina Crowne    | Hatchery and Conditioning Centre |    7000 | [2006-08-08, )
+  Helmholtz Watson | College of Emotional Engineering |   18500 | [2006-08-08, )
 
 The history table employees_history is empty:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ --------------
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
 
 The start of sys_period column represents the time when the row became current.
 The trigger generates this value by using a CURRENT_TIMESTAMP value which
@@ -192,21 +195,23 @@ table.  If a single transaction makes multiple updates to the same row, only
 one history row is generated.  For example, the following data was updated on
 February 27, 2007 in the table employees:
 
-  UPDATE employees SET salary = 11200 WHERE name = 'Bernard Marx';
+```SQL
+UPDATE employees SET salary = 11200 WHERE name = 'Bernard Marx';
+```
 
 The employees table now contains the following data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ --------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [2007-02-27, )
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [2006-08-08, )
-  Helmholtz Watson College of Emotional Engineering  18500 [2006-08-08, )
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |  10000  | [2007-02-27, )
+  Lenina Crowne    | Hatchery and Conditioning Centre |   7000  | [2006-08-08, )
+  Helmholtz Watson | College of Emotional Engineering |  18500  | [2006-08-08, )
 
 The history table employees_history now contains the following data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ ------------------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [2006-08-08, 2007-02-27)
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [2006-08-08, 2007-02-27)
 
 Update conflicts and time adjustment
 ------------------------------------
@@ -215,40 +220,31 @@ Update conflicts can occur when multiple transactions are updating the same row.
 For example, two transactions A and B are executing statements against the
 employees table at the same time:
 
-  Time Transaction A                        Transaction B
-  ---- -------------                        -------------
-    T1 INSERT INTO employees (name, salary)
-       VALUES ('Bernard Marx', 10000);
-
-    T2                                      INSERT INTO employees (name, salary)
-                                            VALUES ('Lenina Crowne', 7000);
-
-    T3                                      COMMIT;
-
-    T4 UPDATE employees SET salary = 6800
-       WHERE name = 'Lenina Crowne';
-
-    T5 INSERT INTO employees (name, salary)
-       VALUES ('Helmholtz Watson', 18500);
-
-    T6 COMMIT;
+  Time | Transaction A                                                            |  Transaction B
+  ---- | ------------------------------------------------------------------------ | -------------------------------------
+    T1 | INSERT INTO employees (name, salary) VALUES ('Bernard Marx', 10000);     |
+    T2 |                                                                          | INSERT INTO employees (name, salary) VALUES ('Lenina Crowne', 7000);
+    T3 |                                                                          | COMMIT;
+    T4 | UPDATE employees SET salary = 6800 WHERE name = 'Lenina Crowne';         |
+    T5 | INSERT INTO employees (name, salary) VALUES ('Helmholtz Watson', 18500); |
+    T6 | COMMIT;                                                                  |
 
 After the inserts at T1 and T2, the employees history contains the following
 data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ ----------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [T1, )
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [T2, )
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |  10000  | [T1, )
+  Lenina Crowne    | Hatchery and Conditioning Centre |   7000  | [T2, )
 
 The history table employee_history is empty.
 
 At time T4 the trigger must set the start of sys_period column of the row to T1
 and insert the following row into the history table:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ ----------
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [T2, T1)
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Lenina Crowne    | Hatchery and Conditioning Centre |    7000 | [T2, T1)
 
 However, T2 > T1 and the row cannot be inserted.  In this situation, the update
 at time T4 would fail with SQLSTATE 22000.  To avoid such failures, you can
@@ -257,17 +253,17 @@ of sys_period column at time T4 is set to time T2 plus delta (a small interval
 of time, typically equals to 1 microsecond).  After this adjustment and the
 completion of transaction A, the employees table looks like this:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ --------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [T1, )
-  Lenina Crowne    Hatchery and Conditioning Centre   6800 [T2 + delta, )
-  Helmholtz Watson College of Emotional Engineering  18500 [T1, )
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [T1, )
+  Lenina Crowne    | Hatchery and Conditioning Centre |    6800 | [T2 + delta, )
+  Helmholtz Watson | College of Emotional Engineering |   18500 | [T1, )
 
 The history table employees_history contains the following data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ ----------------
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [T2, T2 + delta)
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Lenina Crowne    | Hatchery and Conditioning Centre |    7000 | [T2, T2 + delta)
 
 Deleting data
 -------------
@@ -276,23 +272,25 @@ When a user deletes data from a system-period temporal table, the trigger adds
 rows to the associated history table.  For example, the following data was
 deleted on 24 December, 2012 from the table employees:
 
-  DELETE FROM employees WHERE name = 'Helmholtz Watson';
+```SQL
+DELETE FROM employees WHERE name = 'Helmholtz Watson';
+```
 
 The employees table now contains the following data:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ --------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [2007-02-27, )
-  Lenina Crowne    Hatchery and Conditioning Centre   7000 [2006-08-08, )
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [2007-02-27, )
+  Lenina Crowne    | Hatchery and Conditioning Centre |    7000 | [2006-08-08, )
 
 The history table employees_history now looks like this:
 
-  name             department                       salary sys_period
-  -----------      -------------------------------- ------ ------------------------
-  Bernard Marx     Hatchery and Conditioning Centre  10000 [2006-08-08, 2007-02-27)
-  Helmholtz Watson College of Emotional Engineering  18500 [2006-08-08, 2012-12-24)
+  name             | department                       | salary  | sys_period
+  ---------------- | -------------------------------- | ------- | --------------
+  Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [2006-08-08, 2007-02-27)
+  Helmholtz Watson | College of Emotional Engineering |   18500 | [2006-08-08, 2012-12-24)
 
-5. Examples and hints
+Examples and hints
 =====================
 
 Using inheritance when creating history tables
@@ -301,17 +299,21 @@ Using inheritance when creating history tables
 In the example above we used LIKE statement to create the history table,
 sometimes it is better to use inheritance for this task.  For example:
 
-  CREATE TABLE employees_history
-  (
-    name text NOT NULL PRIMARY KEY,
-    department text,
-    salary numeric(20, 2),
-    sys_period tstzrange NOT NULL
-  );
+```SQL
+CREATE TABLE employees_history
+(
+  name text NOT NULL PRIMARY KEY,
+  department text,
+  salary numeric(20, 2),
+  sys_period tstzrange NOT NULL
+);
+```
 
 Then create the employees table:
 
-  CREATE TABLE employees () INHERITS (employees_history);
+```SQL
+CREATE TABLE employees () INHERITS (employees_history);
+```
 
 Pruning history tables
 ----------------------
@@ -341,43 +343,38 @@ It is possible to use system-period temporal tables for data audit.  For
 example, you can add the following triggers to save user that modified or
 deleted the current row:
 
-  CREATE FUNCTION employees_modify()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    NEW.user_modified = SESSION_USER;
-    RETURN NEW;
-  END;
-  $$ LANGUAGE plpgsql;
+```SQL
+CREATE FUNCTION employees_modify()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.user_modified = SESSION_USER;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-  CREATE TRIGGER employees_modify
-  BEFORE INSERT OR UPDATE ON employees
-  FOR EACH ROW EXECUTE PROCEDURE employees_modify();
+CREATE TRIGGER employees_modify
+BEFORE INSERT OR UPDATE ON employees
+FOR EACH ROW EXECUTE PROCEDURE employees_modify();
 
-  CREATE FUNCTION employees_delete()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    NEW.user_deleted = SESSION_USER;
-    RETURN NEW;
-  END;
-  $$ LANGUAGE plpgsql;
+CREATE FUNCTION employees_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.user_deleted = SESSION_USER;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-  CREATE TRIGGER employees_delete
-  BEFORE INSERT ON employees_history
-  FOR EACH ROW EXECUTE PROCEDURE employees_delete();
+CREATE TRIGGER employees_delete
+BEFORE INSERT ON employees_history
+FOR EACH ROW EXECUTE PROCEDURE employees_delete();
+```
 
-6. Performance benchmarks
-=========================
-
-TODO
-
-7. Tutorials
+Tutorials
 ============
 
-Using and querying temporal tables in PostgreSQL
+[Using and querying temporal tables in PostgreSQL](http://clarkdave.net/2015/02/historical-records-with-postgresql-and-temporal-tables-and-sql-2011/)
 
-http://clarkdave.net/2015/02/historical-records-with-postgresql-and-temporal-tables-and-sql-2011/
-
-8. Notes
+Notes
 ========
 
 Temporal Tables Extension is distributed under the terms of BSD 2-clause

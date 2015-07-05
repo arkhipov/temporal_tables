@@ -5,7 +5,7 @@ OBJS = versioning.o
 
 EXTENSION = temporal_tables
 DATA = temporal_tables--1.0.1.sql temporal_tables--1.0.0--1.0.1.sql
-DOCS = README.temporal_tables
+DOCS = README.md
 
 REGRESS = install no_system_period invalid_system_period \
           no_history_table no_history_system_period invalid_types \
