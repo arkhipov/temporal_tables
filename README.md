@@ -203,7 +203,7 @@ The employees table now contains the following data:
 
   name             | department                       | salary  | sys_period
   ---------------- | -------------------------------- | ------- | --------------
-  Bernard Marx     | Hatchery and Conditioning Centre |  10000  | [2007-02-27, )
+  Bernard Marx     | Hatchery and Conditioning Centre |  11200  | [2007-02-27, )
   Lenina Crowne    | Hatchery and Conditioning Centre |   7000  | [2006-08-08, )
   Helmholtz Watson | College of Emotional Engineering |  18500  | [2006-08-08, )
 
