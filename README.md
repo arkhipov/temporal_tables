@@ -37,6 +37,10 @@ sites:
 2. [Developing Time-Oriented Database Applications in SQL, Richard T. Snodgrass, Morgan Kaufmann Publishers, Inc., San Francisco, July, 1999, 504+xxiii pages, ISBN 1-55860-436-7.](http://www.cs.arizona.edu/~rts/tdbbook.pdf)
 3. [WG2 N1536. WG3: KOA-046. Temporal Features in SQL standard. Krishna Kulkarni,. IBM Corporation](http://metadata-standards.org/Document-library/Documents-by-number/WG2-N1501-N1550/WG2_N1536_koa046-Temporal-features-in-SQL-standard.pdf)
 
+There is [a fantastic tutorial](http://clarkdave.net/2015/02/historical-records-with-postgresql-and-temporal-tables-and-sql-2011/)
+on using and querying temporal tables in PostgreSQL with the Temporal Tables
+Extension written by [Clark Dave](https://github.com/clarkdave).
+
 Requirements
 ===============
 
@@ -368,11 +372,6 @@ CREATE TRIGGER employees_delete
 BEFORE INSERT ON employees_history
 FOR EACH ROW EXECUTE PROCEDURE employees_delete();
 ```
-
-Tutorials
-============
-
-[Using and querying temporal tables in PostgreSQL](http://clarkdave.net/2015/02/historical-records-with-postgresql-and-temporal-tables-and-sql-2011/)
 
 Notes
 ========
