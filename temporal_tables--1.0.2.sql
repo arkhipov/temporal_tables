@@ -1,4 +1,4 @@
-/* temporal_tables/temporal_tables--1.0.1.sql */
+/* temporal_tables/temporal_tables--1.0.2.sql */
 
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION temporal_tables" to load this file.\quit
