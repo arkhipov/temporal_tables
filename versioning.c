@@ -30,7 +30,7 @@
 
 PG_MODULE_MAGIC;
 
-Datum versioning(PG_FUNCTION_ARGS);
+PGDLLEXPORT Datum versioning(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(versioning);
 
@@ -750,7 +750,7 @@ next_timestamp(TimestampTz timestamp)
 		ts = (float8) timestamp;
 		next = ts + 1E-06;
 		if (next != ts)
-			return next;
+			return (TimestampTz) next;
 
 		return (TimestampTz) nextafter(ts, DBL_MAX);
 	}

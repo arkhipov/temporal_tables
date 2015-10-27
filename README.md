@@ -49,7 +49,13 @@ Temporal Tables Extension requires PostgreSQL 9.2 or higher.
 Installation
 ===============
 
-To build it, just do this:
+If you are running Linux, the easiest way to install the extension is to to use
+the [PGXN client](http://pgxnclient.projects.pgfoundry.org/).
+
+    $ pgxn install temporal_tables
+
+Or if you prefer to stick with the good old Make, you can set up the extension
+like this:
 
     $ make
     $ make install
@@ -84,6 +90,24 @@ You need to run the test suite using a super user, such as the default
 "postgres" super user:
 
     $ make installcheck PGUSER=postgres
+
+If you are running Windows, you need to run the [MSBuild](https://www.microsoft.com/en-us/download/details.aspx?id=48159)
+command in the [Visual Studio command prompt](https://msdn.microsoft.com/en-us/library/f35ctcxw.aspx).
+
+    > msbuild /p:configuration=9.4 /p:platform=x64
+
+The platforms available are x64 and x86 and the configuration are 9.2, 9.3
+and 9.4.
+
+Or you can download the latest released zip [here](https://github.com/arkhipov/temporal_tables/releases/latest).
+
+Then you must copy the DLL from the project into the PostgreSQL's `lib`
+directory and the `.sql` and `.control` files into the directory
+`share\extension`.
+
+    > copy x64\9.4\temporal_tables.dll "C:\Program Files\PostgreSQL\9.4\lib"
+    > copy *.control "C:\Program Files\PostgreSQL\9.4\share\extension"
+    > copy *.sql "C:\Program Files\PostgreSQL\9.4\share\extension"
 
 Once the extension is installed, you can add it to a database.  Connect to a
 database as a super user and do this:
