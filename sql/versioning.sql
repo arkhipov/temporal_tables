@@ -73,3 +73,6 @@ SELECT a, c, upper(sys_period) = CURRENT_TIMESTAMP FROM versioning_history ORDER
 SELECT a, "b b" FROM versioning WHERE lower(sys_period) = CURRENT_TIMESTAMP ORDER BY a, sys_period;
 
 END;
+
+DROP TABLE versioning;
+DROP TABLE versioning_history;

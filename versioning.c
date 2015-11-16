@@ -2,7 +2,7 @@
  *
  * versioning.c
  *
- * Copyright (c) 2012, 2013, 2014 Vladislav Arkhipov <vlad@arkhipov.ru>
+ * Copyright (c) 2012-2015 Vladislav Arkhipov <vlad@arkhipov.ru>
  *
  * -------------------------------------------------------------------------
  */
@@ -28,11 +28,13 @@
 #include "utils/syscache.h"
 #include "utils/timestamp.h"
 
-PG_MODULE_MAGIC;
+#include "temporal_tables.h"
 
 PGDLLEXPORT Datum versioning(PG_FUNCTION_ARGS);
+PGDLLEXPORT Datum set_system_time(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(versioning);
+PG_FUNCTION_INFO_V1(set_system_time);
 
 /* Warning if system period was adjusted. */
 #define ERRCODE_WARNING_SYSTEM_PERIOD_ADJUSTED MAKE_SQLSTATE('0', '1', 'X', '0', '1')
@@ -105,6 +107,8 @@ static void deserialize_system_period(HeapTuple tuple,
 									  RangeBound *upper);
 
 static void lookup_integer_datetimes();
+
+static TimestampTz get_system_time();
 
 static TimestampTz next_timestamp(TimestampTz timestamp);
 
@@ -261,6 +265,52 @@ versioning(PG_FUNCTION_ARGS)
 		return versioning_delete(trigdata, typcache,
 								 period_attnum, period_attname,
 								 args[1], args[2]);
+}
+
+/*
+ * Set the system time value that is used by versioned triggers to the
+ * specific value. Revert to the default behaviour if NULL is passed for the
+ * argument.
+ */
+Datum
+set_system_time(PG_FUNCTION_ARGS)
+{
+	TemporalContext *ctx = get_current_temporal_context(true);
+
+	if (PG_ARGISNULL(0))
+	{
+		ctx->system_time_mode = CurrentTransactionStartTimestamp;
+	}
+	else
+	{
+		ctx->system_time_mode = UserDefined;
+		ctx->system_time = PG_GETARG_TIMESTAMPTZ(0);
+	}
+
+	PG_RETURN_VOID();
+}
+
+/*
+ * Get the value that should be used as the system time by versioned
+ * triggers.
+ */
+static TimestampTz
+get_system_time()
+{
+	TemporalContext *ctx = get_current_temporal_context(false);
+
+	switch (ctx->system_time_mode)
+	{
+		case CurrentTransactionStartTimestamp:
+			return GetCurrentTransactionStartTimestamp();
+		case UserDefined:
+			return ctx->system_time;
+	}
+
+	Assert(false);
+
+	/* will never get here */
+	return 0;
 }
 
 /*
@@ -806,7 +856,7 @@ adjust_system_period(TypeCacheEntry *typcache,
 
 /*
  * Set system period attribute value of the current row to
- * "[CURRENT_TIMESTAMP, )".
+ * "[system_time, )".
  */
 static Datum
 versioning_insert(TriggerData *trigdata,
@@ -821,7 +871,7 @@ versioning_insert(TriggerData *trigdata,
 	char		 nulls[1];
 
 	/* Construct a period for the current row. */
-	lower.val = TimestampTzGetDatum(GetCurrentTransactionStartTimestamp());
+	lower.val = TimestampTzGetDatum(get_system_time());
 	lower.infinite = false;
 	lower.inclusive = true;
 	lower.lower = true;
@@ -844,10 +894,10 @@ versioning_insert(TriggerData *trigdata,
 
 /*
  * Set system period attribute value of the current row to
- * "[CURRENT_TIMESTAMP, )", insert the original row into the history table
- * with the system period attribute value "[lower, CURRENT_TIMESTAMP)".
+ * "[system_time, )", insert the original row into the history table
+ * with the system period attribute value "[lower, system_time)".
  *
- * If lower is greater than or equals to CURRENT_TIMESTAMP, adjust argument
+ * If lower is greater than or equals to system_time, adjust argument
  * determines whether timestamps adjustment are made or transaction should
  * fail.
  *
@@ -889,7 +939,7 @@ versioning_update(TriggerData *trigdata,
 							  typcache, &lower, &upper);
 
 	/* Construct a period for the history row. */
-	upper.val = TimestampTzGetDatum(GetCurrentTransactionStartTimestamp());
+	upper.val = TimestampTzGetDatum(get_system_time());
 	upper.infinite = false;
 	upper.inclusive = false;
 
@@ -929,9 +979,9 @@ versioning_update(TriggerData *trigdata,
 
 /*
  * Insert the original row into the history table with the system period
- * attribute value "[lower, CURRENT_TIMESTAMP)".
+ * attribute value "[lower, system_time)".
  *
- * If lower is greater than or equals to CURRENT_TIMESTAMP, adjust argument
+ * If lower is greater than or equals to system_time, adjust argument
  * determines whether timestamps adjustment are made or transaction should
  * fail.
  */
@@ -960,7 +1010,7 @@ versioning_delete(TriggerData *trigdata,
 							  typcache, &lower, &upper);
 
 	/* Construct a period for the history row. */
-	upper.val = TimestampTzGetDatum(GetCurrentTransactionStartTimestamp());
+	upper.val = TimestampTzGetDatum(get_system_time());
 	upper.infinite = false;
 	upper.inclusive = false;
 

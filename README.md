@@ -318,6 +318,28 @@ The history table employees_history now looks like this:
   Bernard Marx     | Hatchery and Conditioning Centre |   10000 | [2006-08-08, 2007-02-27)
   Helmholtz Watson | College of Emotional Engineering |   18500 | [2006-08-08, 2012-12-24)
 
+Advanced usage
+==============
+
+Instead of using CURRENT_TIMESTAMP, you may want to set a custom system time for
+versioning triggers.  It is useful for creating a data warehouse from a system
+that recorded a system time and you want to use that time instead.
+
+```SQL
+SELECT set_system_time('1985-08-08 06:42:00+08');
+```
+
+To revert it back to the default behaviour, call the function with `NULL` as its
+argument.
+
+```SQL
+SELECT set_system_time(NULL);
+```
+
+If the `set_system_time` function is issued within a transaction that is later
+aborted, all the changes are undone.  If the transaction is committed, the
+changes will persist until the end of the session.
+
 Examples and hints
 =====================
 
