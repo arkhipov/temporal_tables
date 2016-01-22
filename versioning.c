@@ -824,24 +824,14 @@ adjust_system_period(TypeCacheEntry *typcache,
 		TimestampTz next_ts;
 
 		if (!parse_adjust_argument(adjust_argument))
-		{
-			pg_time_t start_time = 0;
-			pg_time_t tx_start_time;
-
-			if (!lower->infinite)
-				start_time = timestamptz_to_time_t(DatumGetTimestampTz(lower->val));
-
-			tx_start_time = timestamptz_to_time_t(DatumGetTimestampTz(upper->val));
-
 			ereport(ERROR,
 					(errcode(ERRCODE_DATA_EXCEPTION),
 					 errmsg("system period value of relation \"%s\" cannot be set to a valid period because a row that is attempted to modify was also modified by another transaction",
 							RelationGetRelationName(relation)),
 					 errdetail("the start time of system period is %s but the start time of the current transaction is %s",
-							   lower->infinite ? "-infinity" : timestamptz_to_str(start_time),
-							   timestamptz_to_str(tx_start_time)),
+							   lower->infinite ? "-infinity" : timestamptz_to_str(DatumGetTimestampTz(lower->val)),
+							   timestamptz_to_str(DatumGetTimestampTz(upper->val))),
 					 errhint("retry the statement or set \"adjust\" parameter of \"versioning\" function to true")));
-		}
 
 		ereport(WARNING,
 				(errcode(ERRCODE_WARNING_SYSTEM_PERIOD_ADJUSTED),
