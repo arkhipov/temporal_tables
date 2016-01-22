@@ -30,6 +30,10 @@
 
 #include "temporal_tables.h"
 
+#if defined(_MSC_VER) && _MSC_VER<1800
+#define nextafter _nextafter
+#endif
+
 PGDLLEXPORT Datum versioning(PG_FUNCTION_ARGS);
 PGDLLEXPORT Datum set_system_time(PG_FUNCTION_ARGS);
 
