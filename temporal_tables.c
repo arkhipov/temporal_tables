@@ -17,7 +17,7 @@
 
 PG_MODULE_MAGIC;
 
-void _PG_init(void);
+PGDLLEXPORT void _PG_init(void);
 
 static void temporal_tables_xact_callback(XactEvent event,
 										  void *arg);
