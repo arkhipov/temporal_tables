@@ -1,7 +1,7 @@
 Temporal Tables Extension
 =========================
 
-[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables)
+[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables) [![Build Status](https://ci.appveyor.com/api/projects/status/github/arkhipov/temporal_tables?branch=msvc&svg=true)](https://ci.appveyor.com/project/arkhipov/temporal-tables)
 
 Introduction
 ===============
