@@ -18,6 +18,13 @@ SELECT * FROM structure_history ORDER BY a, sys_period;
 (0 rows)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Update.
 BEGIN;
 UPDATE structure SET d = 'blah' WHERE a = 1;
@@ -34,6 +41,13 @@ SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
 (1 row)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Drop column in the versioned table.
 ALTER TABLE structure DROP COLUMN d;
 -- Update.
@@ -53,6 +67,13 @@ SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
 (2 rows)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Add column to the versioned table.
 ALTER TABLE structure ADD COLUMN e text;
 -- Update.
@@ -73,6 +94,13 @@ SELECT a, "b b", d FROM structure_history ORDER BY a, sys_period;
 (3 rows)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Add column in the history table.
 ALTER TABLE structure_history ADD COLUMN e text;
 -- Update.
@@ -94,6 +122,13 @@ SELECT a, "b b", d, e FROM structure_history ORDER BY a, sys_period;
 (4 rows)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Drop column in the history table.
 ALTER TABLE structure_history DROP COLUMN "b b";
 -- Update.

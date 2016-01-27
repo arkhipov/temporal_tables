@@ -1,7 +1,7 @@
 Temporal Tables Extension
 =========================
 
-[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables)
+[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables) [![Build Status](https://ci.appveyor.com/api/projects/status/github/arkhipov/temporal_tables?branch=master&svg=true)](https://ci.appveyor.com/project/arkhipov/temporal-tables)
 
 Introduction
 ===============
@@ -94,10 +94,10 @@ You need to run the test suite using a super user, such as the default
 If you are running Windows, you need to run the [MSBuild](https://www.microsoft.com/en-us/download/details.aspx?id=48159)
 command in the [Visual Studio command prompt](https://msdn.microsoft.com/en-us/library/f35ctcxw.aspx).
 
-    > msbuild /p:configuration=9.4 /p:platform=x64
+    > msbuild /p:pgversion=9.4 /p:configuration=Release /p:platform=x64
 
 The platforms available are x64 and x86 and the configuration are 9.2, 9.3
-and 9.4.
+, 9.4, and 9.5.
 
 Or you can download the latest released zip [here](https://github.com/arkhipov/temporal_tables/releases/latest).
 

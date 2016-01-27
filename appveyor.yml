@@ -1,0 +1,63 @@
+version: 1.0.{build}
+pull_requests:
+  do_not_increment_build_number: true
+os: Visual Studio 2015
+configuration: Release
+platform: x64
+clone_depth: 1
+environment:
+  PG95: postgresql-9.5.0-1-windows-x64.exe
+  PGUSER: postgres
+  PGPASSWORD: Password12!
+  matrix:
+  - pgversion: 9.3
+    PlatformToolset: Windows7.1SDK
+  - pgversion: 9.4
+    PlatformToolset: v120
+  - pgversion: 9.5
+    PlatformToolset: v120
+
+install:
+- if not exist %PG95% curl -sLO http://get.enterprisedb.com/postgresql/%PG95%
+- if not exist "%PROGRAMFILES%\PostgreSQL\9.5\" if "%pgversion%" == "9.5" (
+    %PG95% --unattendedmodeui minimal^
+           --mode unattended^
+           --superpassword %PGPASSWORD%^
+           --servicepassword %PGPASSWORD%^
+      && net stop postgresql-x64-9.5
+  )
+
+cache: '%PG95%'
+
+build_script:
+- msbuild /p:PlatformToolset=%PlatformToolset% /p:configuration=Release /p:platform=x64^
+          temporal_tables.vcxproj^
+          /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+test_script:
+- set pgbin=%ProgramFiles%\PostgreSQL\%pgversion%\bin
+- set PATH=%PATH%;%SystemRoot%\system32;%pgbin%
+
+- rem Check DLL dependencies.
+- C:\msys64\usr\bin\ldd x64\Release\temporal_tables.dll
+
+- rem Copy the extension files to the PostgreSQL directories.
+- copy /y *.control "%ProgramFiles%\PostgreSQL\%pgversion%\share\extension\"
+- copy /y *.sql "%ProgramFiles%\PostgreSQL\%pgversion%\share\extension\"
+- copy /y x64\Release\temporal_tables.dll "%ProgramFiles%\PostgreSQL\%pgversion%\lib\"
+
+- rem Start the database server.
+- net start postgresql-x64-%pgversion%
+
+- rem Run the regression tests tool.
+
+- rem --psqldir has been replaced by --bindir since 9.5.
+- if "%pgversion%"=="9.5" (set psqlopt="--bindir") else (set psqlopt="--psqldir")
+
+- pg_regress "%psqlopt%=%pgbin%"^
+             install no_system_period invalid_system_period no_history_table^
+             no_history_system_period invalid_types invalid_system_period_values^
+             versioning versioning_custom_system_time structure uninstall
+
+artifacts:
+- path: x64\Release\temporal_tables.dll

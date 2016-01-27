@@ -23,6 +23,13 @@ SELECT * FROM versioning_history ORDER BY a, sys_period;
 (0 rows)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Update.
 BEGIN;
 UPDATE versioning SET a = 4 WHERE a = 3;
@@ -47,6 +54,13 @@ SELECT a, "b b" FROM versioning WHERE lower(sys_period) = CURRENT_TIMESTAMP ORDE
 (1 row)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Multiple updates.
 BEGIN;
 UPDATE versioning SET a = 5 WHERE a = 4;
@@ -73,6 +87,13 @@ SELECT a, "b b" FROM versioning WHERE lower(sys_period) = CURRENT_TIMESTAMP ORDE
 (1 row)
 
 COMMIT;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Delete.
 BEGIN;
 DELETE FROM versioning WHERE a = 4;
@@ -97,6 +118,13 @@ SELECT a, "b b" FROM versioning WHERE lower(sys_period) = CURRENT_TIMESTAMP ORDE
 (0 rows)
 
 END;
+-- Make sure that the next transaction's CURRENT_TIMESTAMP is different.
+SELECT pg_sleep(0.1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 -- Delete.
 BEGIN;
 DELETE FROM versioning;

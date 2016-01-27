@@ -1,3 +1,5 @@
+SET client_min_messages TO error;
+
 CREATE TABLE no_system_period ();
 
 CREATE TRIGGER versioning_trigger
