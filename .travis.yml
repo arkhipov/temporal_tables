@@ -1,15 +1,19 @@
 language: c
 env:
+    - PG=9.5
     - PG=9.4
     - PG=9.3
     - PG=9.2
 install:
+    - PGPORT=5440
     - sudo /etc/init.d/postgresql stop
     - sudo apt-get update -o Dir::Etc::sourcelist=/dev/null
     - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG
+    - sudo pg_createcluster -p $PGPORT $PG test
+    - sudo sed -i '1i local all all trust' /etc/postgresql/$PG/test/pg_hba.conf
     - sudo /etc/init.d/postgresql start $PG
 script:
-    - psql postgres -xA -c 'select version()'
+    - psql -p $PGPORT -U postgres postgres -xA -c 'select version()'
     - make
     - sudo make install
-    - make installcheck || (cat regression.diffs && false)
+    - make installcheck PGUSER=postgres PGPORT=$PGPORT || (cat regression.diffs && false)
