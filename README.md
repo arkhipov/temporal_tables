@@ -352,7 +352,7 @@ sometimes it is better to use inheritance for this task.  For example:
 ```SQL
 CREATE TABLE employees_history
 (
-  name text NOT NULL PRIMARY KEY,
+  name text NOT NULL,
   department text,
   salary numeric(20, 2),
   sys_period tstzrange NOT NULL
@@ -362,7 +362,7 @@ CREATE TABLE employees_history
 Then create the employees table:
 
 ```SQL
-CREATE TABLE employees () INHERITS (employees_history);
+CREATE TABLE employees (PRIMARY KEY(name)) INHERITS (employees_history);
 ```
 
 Pruning history tables
