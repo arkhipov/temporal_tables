@@ -16,6 +16,7 @@ environment:
   - exe: postgresql-9.5.3-1-windows-%PLATFORM%.exe
   - exe: postgresql-9.6.0-beta1-windows-%PLATFORM%.exe
 
+install:
 - set dist=%exe:-x86=%
 - set pgversion=%exe:~11,3%
 - echo pgversion=%pgversion%
@@ -61,7 +62,7 @@ test_script:
 
 - appveyor AddTest Regression -Framework pg_regress -FileName sql\ -Outcome Running
 - if %pgversion:~2,1% LEQ 4 ( set psqlopt=--psqldir) else set psqlopt=--bindir
-- pg_regress "%psqlopt%=%pgbin%"
+- pg_regress "%psqlopt%=%pgroot%\bin"
              install no_system_period invalid_system_period no_history_table
              no_history_system_period invalid_types invalid_system_period_values
              versioning versioning_custom_system_time structure uninstall
