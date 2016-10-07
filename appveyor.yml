@@ -11,10 +11,10 @@ environment:
   PGUSER: postgres
   PGPASSWORD: Password12!
   matrix:
-  - exe: postgresql-9.3.13-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.4.8-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.5.3-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.6.0-beta1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.3.14-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.4.9-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.5.4-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.6.0-1-windows-%PLATFORM%.exe
 
 install:
 - set dist=%exe:-x86=%
