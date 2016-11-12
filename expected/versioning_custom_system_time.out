@@ -204,3 +204,5 @@ SELECT upper(sys_period) FROM versioning WHERE a = 6 AND lower(sys_period) = CUR
 (1 row)
 
 END;
+DROP TABLE versioning;
+DROP TABLE versioning_history;

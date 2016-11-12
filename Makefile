@@ -13,7 +13,7 @@ DOCS = README.md
 REGRESS = install no_system_period invalid_system_period \
           no_history_table no_history_system_period invalid_types \
           invalid_system_period_values \
-          versioning versioning_custom_system_time \
+          versioning versioning_custom_system_time combinations \
           structure uninstall
 
 PG_CONFIG = pg_config

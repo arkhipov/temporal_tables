@@ -122,6 +122,8 @@ static void adjust_system_period(TypeCacheEntry *typcache,
 								 const char *adjust_argument,
 								 Relation relation);
 
+static bool modified_in_current_transaction(HeapTuple tuple);
+
 static Datum versioning_insert(TriggerData *trigdata,
 							   TypeCacheEntry *typcache,
 							   int period_attnum);
@@ -849,6 +851,18 @@ adjust_system_period(TypeCacheEntry *typcache,
 }
 
 /*
+ * Check if the tuple was inserted or updated in the current transaction.
+ */
+static bool
+modified_in_current_transaction(HeapTuple tuple)
+{
+	TransactionId	 oldxmin;
+
+	oldxmin = HeapTupleHeaderGetXmin(tuple->t_data);
+	return TransactionIdIsCurrentTransactionId(oldxmin);
+}
+
+/*
  * Set system period attribute value of the current row to
  * "[system_time, )".
  */
@@ -907,7 +921,6 @@ versioning_update(TriggerData *trigdata,
 				  const char *adjust_argument)
 {
 	HeapTuple		 tuple;
-	TransactionId	 oldxmin;
 	Relation		 relation;
 	RangeBound		 lower;
 	RangeBound		 upper;
@@ -919,12 +932,8 @@ versioning_update(TriggerData *trigdata,
 
 	tuple = trigdata->tg_trigtuple;
 
-	/*
-	 * Check that a history row was not already inserted by this transaction
-	 * before.
-	 */
-	oldxmin = HeapTupleHeaderGetXmin(tuple->t_data);
-	if (TransactionIdIsCurrentTransactionId(oldxmin))
+	/* Ignore tuples modified in this transaction. */
+	if (modified_in_current_transaction(tuple))
 		return PointerGetDatum(trigdata->tg_newtuple);
 
 	relation = trigdata->tg_relation;
@@ -998,6 +1007,11 @@ versioning_delete(TriggerData *trigdata,
 	HeapTuple	 history_tuple;
 
 	tuple = trigdata->tg_trigtuple;
+
+	/* Ignore tuples modified in this transaction. */
+	if (modified_in_current_transaction(tuple))
+		return PointerGetDatum(tuple);
+
 	relation = trigdata->tg_relation;
 
 	deserialize_system_period(tuple, relation, period_attnum, period_attname,

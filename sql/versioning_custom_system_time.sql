@@ -132,3 +132,6 @@ INSERT INTO versioning (a) VALUES (6);
 SELECT upper(sys_period) FROM versioning WHERE a = 6 AND lower(sys_period) = CURRENT_TIMESTAMP;
 
 END;
+
+DROP TABLE versioning;
+DROP TABLE versioning_history;
