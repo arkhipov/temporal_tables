@@ -46,7 +46,7 @@ PG_FUNCTION_INFO_V1(set_system_time);
 /* Cached data for versioning trigger. */
 typedef struct VersioningHashEntry
 {
-	Oid 		 relid;					/* OID of the versioned relation */
+	Oid 		 relid;					/* hash key (must be first) */
 	Oid 		 history_relid;			/* OID of the history relation */
 	TupleDesc	 tupdesc;				/* tuple descriptor of the versioned relation */
 	TupleDesc	 history_tupdesc;		/* tuple descriptor of the history relation */
@@ -143,6 +143,7 @@ static Datum versioning_delete(TriggerData *trigdata,
 							   const char *adjust_argument);
 
 static void init_versioning_hash_table();
+static void *hash_entry_alloc(Size size);
 
 static VersioningHashEntry *lookup_versioning_hash_entry(Oid relid,
 														 bool *found);
@@ -1040,6 +1041,12 @@ versioning_delete(TriggerData *trigdata,
 	return PointerGetDatum(tuple);
 }
 
+static void *
+hash_entry_alloc(Size size)
+{
+	return MemoryContextAllocZero(TopMemoryContext, size);
+}
+
 /*
  * Initialize the internal hash table for cached data.
  */
@@ -1049,13 +1056,22 @@ init_versioning_hash_table()
 	HASHCTL	ctl;
 
 	memset(&ctl, 0, sizeof(ctl));
+	ctl.alloc = hash_entry_alloc;
 	ctl.keysize = sizeof(Oid);
 	ctl.entrysize = sizeof(VersioningHashEntry);
+#if PG_VERSION_NUM < 90500
 	ctl.hash = oid_hash;
+#endif
+
 	versioning_cache = hash_create("Versioning Hash",
 								   128,
 								   &ctl,
-								   HASH_ELEM | HASH_FUNCTION);
+#if PG_VERSION_NUM < 90500
+								   HASH_ALLOC | HASH_ELEM | HASH_FUNCTION
+#else
+								   HASH_ALLOC | HASH_ELEM | HASH_BLOBS
+#endif
+								  );
 }
 
 /*
@@ -1079,8 +1095,6 @@ lookup_versioning_hash_entry(Oid relid,
 
 	if (!*found)
 	{
-		memset(entry, 0, sizeof(VersioningHashEntry));
-
 		/* Mark a newly created entry invalid. */
 		entry->natts = -1;
 	}
