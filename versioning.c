@@ -562,8 +562,8 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 
 		hash_entry->history_relid = RelationGetRelid(history_relation);
-		hash_entry->tupdesc = CreateTupleDescCopy(tupdesc);
-		hash_entry->history_tupdesc = CreateTupleDescCopy(history_tupdesc);
+		hash_entry->tupdesc = CreateTupleDescCopyConstr(tupdesc);
+		hash_entry->history_tupdesc = CreateTupleDescCopyConstr(history_tupdesc);
 
 		hash_entry->attnums = palloc(natts * sizeof(int));
 		memcpy(hash_entry->attnums, attnums, natts * sizeof(int));
