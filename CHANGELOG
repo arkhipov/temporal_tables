@@ -9,3 +9,6 @@ Version 1.0.2, released 2015-08-02
 
 Version 1.1.0, released 2016-06-12
   - user-defined system time
+
+Version 1.1.1, released 2017-01-16
+  - memory leak fixed

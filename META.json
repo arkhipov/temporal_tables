@@ -2,7 +2,7 @@
    "name": "temporal_tables",
    "abstract": "Temporal Tables Extension",
    "description": "This extension provides support for temporal tables. System-period data versioning (also known as transaction time or system time) allows you to specify that old rows are archived into another table (that is called the history table).",
-   "version": "1.1.0",
+   "version": "1.1.1",
    "release_status": "stable",
    "maintainer": [
       "Vladislav Arkhipov <vlad@arkhipov.ru>"
@@ -11,9 +11,9 @@
    "provides": {
       "temporal_tables": {
          "abstract": "Temporal Tables Extension",
-         "file": "temporal_tables--1.1.0.sql",
+         "file": "temporal_tables--1.1.1.sql",
          "docfile": "README.md",
-         "version": "1.1.0"
+         "version": "1.1.1"
       }
    },
    "prereqs": {
