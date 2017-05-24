@@ -63,9 +63,9 @@ like this:
 
 If you encounter an error such as:
 
-    "Makefile", line 8: Need an operator
+    make: no target to make.
 
-You need to use GNU make, which may well be installed on your system as gmake:
+You need to use GNU make, which may well be installed on your system as `gmake`:
 
     $ gmake
     $ gmake install
