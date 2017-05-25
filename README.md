@@ -415,7 +415,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER employees_delete
-BEFORE INSERT ON employees_history
+BEFORE DELETE ON employees_history
 FOR EACH ROW EXECUTE PROCEDURE employees_delete();
 ```
 
