@@ -24,6 +24,9 @@
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/rangetypes.h"
+#if PG_VERSION_NUM >= 100000
+#include "utils/regproc.h"
+#endif
 #include "utils/rel.h"
 #include "utils/syscache.h"
 #include "utils/timestamp.h"
@@ -123,6 +126,9 @@ static void adjust_system_period(TypeCacheEntry *typcache,
 								 Relation relation);
 
 static bool modified_in_current_transaction(HeapTuple tuple);
+
+static HeapTuple modify_tuple(Relation rel, HeapTuple tuple,
+	                          int period_attnum, RangeType *range);
 
 static Datum versioning_insert(TriggerData *trigdata,
 							   TypeCacheEntry *typcache,
@@ -864,6 +870,25 @@ modified_in_current_transaction(HeapTuple tuple)
 }
 
 /*
+ * Tuple modification wrapper around SPI_modifytuple for PG<10
+ * and heap_modify_tuple_by_cols for PG 10
+ */
+static HeapTuple
+modify_tuple(Relation rel, HeapTuple tuple, int period_attnum, RangeType *range)
+{
+	int			 colnum[1] = { period_attnum };
+	Datum		 values[1] = { RangeTypeGetDatum(range) };
+#if PG_VERSION_NUM >= 100000
+	bool		 nulls[1] = { false };
+	return heap_modify_tuple_by_cols(tuple, RelationGetDescr(rel), 1, colnum, values, nulls);
+#else
+	char		 nulls[1] = { ' ' };
+	return SPI_modifytuple(rel, tuple, 1, colnum, values, nulls);
+#endif
+}
+
+
+/*
  * Set system period attribute value of the current row to
  * "[system_time, )".
  */
@@ -875,9 +900,6 @@ versioning_insert(TriggerData *trigdata,
 	RangeBound	 lower;
 	RangeBound	 upper;
 	RangeType	*range;
-	int			 colnum[1];
-	Datum		 values[1];
-	char		 nulls[1];
 
 	/* Construct a period for the current row. */
 	lower.val = TimestampTzGetDatum(get_system_time());
@@ -891,14 +913,7 @@ versioning_insert(TriggerData *trigdata,
 
 	range = make_range(typcache, &lower, &upper, false);
 
-	/* Modify the current row and return it. */
-	colnum[0] = period_attnum;
-	values[0] = RangeTypeGetDatum(range);
-	nulls[0] = ' ';
-
-	return PointerGetDatum(SPI_modifytuple(trigdata->tg_relation,
-										   trigdata->tg_trigtuple,
-										   1, colnum, values, nulls));
+	return PointerGetDatum(modify_tuple(trigdata->tg_relation, trigdata->tg_trigtuple, period_attnum, range));
 }
 
 /*
@@ -927,9 +942,6 @@ versioning_update(TriggerData *trigdata,
 	RangeBound		 upper;
 	RangeType		*range;
 	HeapTuple		 history_tuple;
-	int				 colnum[1];
-	Datum			 values[1];
-	char			 nulls[1];
 
 	tuple = trigdata->tg_trigtuple;
 
@@ -952,12 +964,7 @@ versioning_update(TriggerData *trigdata,
 
 	range = make_range(typcache, &lower, &upper, false);
 
-	/* Construct and insert the history row. */
-	colnum[0] = period_attnum;
-	values[0] = RangeTypeGetDatum(range);
-	nulls[0] = ' ';
-
-	history_tuple = SPI_modifytuple(relation, tuple, 1, colnum, values, nulls);
+	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
 	insert_history_row(history_tuple, relation, history_relation_argument,
 					   period_attname);
@@ -972,13 +979,7 @@ versioning_update(TriggerData *trigdata,
 
 	range = make_range(typcache, &lower, &upper, false);
 
-	/* Modify the current row and return it. */
-	colnum[0] = period_attnum;
-	values[0] = RangeTypeGetDatum(range);
-	nulls[0] = ' ';
-
-	return PointerGetDatum(SPI_modifytuple(relation, trigdata->tg_newtuple,
-										   1, colnum, values, nulls));
+	return PointerGetDatum(modify_tuple(relation, trigdata->tg_newtuple, period_attnum, range));
 }
 
 /*
@@ -1002,9 +1003,6 @@ versioning_delete(TriggerData *trigdata,
 	RangeBound	 lower;
 	RangeBound	 upper;
 	RangeType	*range;
-	int			 colnum[1];
-	Datum		 values[1];
-	char		 nulls[1];
 	HeapTuple	 history_tuple;
 
 	tuple = trigdata->tg_trigtuple;
@@ -1028,12 +1026,7 @@ versioning_delete(TriggerData *trigdata,
 
 	range = make_range(typcache, &lower, &upper, false);
 
-	/* Construct and insert the history row. */
-	colnum[0] = period_attnum;
-	values[0] = RangeTypeGetDatum(range);
-	nulls[0] = ' ';
-
-	history_tuple = SPI_modifytuple(relation, tuple, 1, colnum, values, nulls);
+	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
 	insert_history_row(history_tuple, relation, history_relation_argument,
 					   period_attname);
