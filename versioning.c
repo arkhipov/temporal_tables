@@ -38,9 +38,13 @@
 #endif
 
 PGDLLEXPORT Datum versioning(PG_FUNCTION_ARGS);
+PGDLLEXPORT Datum versioning2(PG_FUNCTION_ARGS);
 PGDLLEXPORT Datum set_system_time(PG_FUNCTION_ARGS);
 
+static Datum versioning_common(bool has_oid, PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1(versioning);
+PG_FUNCTION_INFO_V1(versioning2);
 PG_FUNCTION_INFO_V1(set_system_time);
 
 /* Warning if system period was adjusted. */
@@ -51,6 +55,7 @@ typedef struct VersioningHashEntry
 {
 	Oid 		 relid;					/* hash key (must be first) */
 	Oid 		 history_relid;			/* OID of the history relation */
+	char		 history_relname[NAMEDATALEN];
 	TupleDesc	 tupdesc;				/* tuple descriptor of the versioned relation */
 	TupleDesc	 history_tupdesc;		/* tuple descriptor of the history relation */
 
@@ -102,7 +107,7 @@ static void fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 
 static void insert_history_row(HeapTuple tuple,
 							   Relation relation,
-							   const char *history_relation_argument,
+							   Oid history_relation_oid,
 							   const char *period_attname);
 
 static void deserialize_system_period(HeapTuple tuple,
@@ -138,14 +143,14 @@ static Datum versioning_update(TriggerData *trigdata,
 							   TypeCacheEntry *typcache,
 							   int period_attnum,
 							   const char *period_attname,
-							   const char *history_relation_argument,
+							   Oid history_relation_oid,
 							   const char *adjust_argument);
 
 static Datum versioning_delete(TriggerData *trigdata,
 							   TypeCacheEntry *typcache,
 							   int period_attnum,
 							   const char *period_attname,
-							   const char *history_relation_argument,
+							   Oid history_relation,
 							   const char *adjust_argument);
 
 static void init_versioning_hash_table();
@@ -183,8 +188,8 @@ static VersioningHashEntry *lookup_versioning_hash_entry(Oid relid,
  * FOR EACH ROW EXECUTE PROCEDURE
  *   versioning(<system_period_column_name>, <history_relation>, <adjust>).
  */
-Datum
-versioning(PG_FUNCTION_ARGS)
+static Datum
+versioning_common(bool has_oid, PG_FUNCTION_ARGS)
 {
 	TriggerData		   *trigdata;
 	Trigger			   *trigger;
@@ -269,15 +274,38 @@ versioning(PG_FUNCTION_ARGS)
 
 	if (TRIGGER_FIRED_BY_INSERT(trigdata->tg_event))
 		return versioning_insert(trigdata, typcache, period_attnum);
-	else if (TRIGGER_FIRED_BY_UPDATE(trigdata->tg_event))
-		return versioning_update(trigdata, typcache,
-								 period_attnum, period_attname,
-								 args[1], args[2]);
 	else
-		/* otherwise this is ON DELETE trigger */
-		return versioning_delete(trigdata, typcache,
-								 period_attnum, period_attname,
-								 args[1], args[2]);
+	{
+		Oid history_relation_oid;
+		if (has_oid)
+			history_relation_oid = strtoul(args[1], NULL, 10);
+		else
+		{
+			RangeVar *relrv = makeRangeVarFromNameList(stringToQualifiedNameList(args[1]));
+			history_relation_oid = RangeVarGetRelid(relrv, AccessShareLock, false);;
+		}
+		if (TRIGGER_FIRED_BY_UPDATE(trigdata->tg_event))
+			return versioning_update(trigdata, typcache,
+				period_attnum, period_attname,
+				history_relation_oid, args[2]);
+		else
+			/* otherwise this is ON DELETE trigger */
+			return versioning_delete(trigdata, typcache,
+				period_attnum, period_attname,
+				history_relation_oid, args[2]);
+	}
+}
+
+Datum
+versioning(PG_FUNCTION_ARGS)
+{
+	return versioning_common(false, fcinfo);
+}
+
+Datum
+versioning2(PG_FUNCTION_ARGS)
+{
+	return versioning_common(true, fcinfo);
 }
 
 /*
@@ -568,6 +596,7 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 
 		hash_entry->history_relid = RelationGetRelid(history_relation);
+		memcpy(hash_entry->history_relname, NameStr(history_relation->rd_rel->relname), NAMEDATALEN);
 		hash_entry->tupdesc = CreateTupleDescCopyConstr(tupdesc);
 		hash_entry->history_tupdesc = CreateTupleDescCopyConstr(history_tupdesc);
 
@@ -597,10 +626,9 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 static void
 insert_history_row(HeapTuple tuple,
 				   Relation relation,
-				   const char *history_relation_name,
+				   Oid history_relation_oid,
 				   const char *period_attname)
 {
-	RangeVar			*relrv;
 	Relation			 history_relation;
 	VersioningHashEntry	*hash_entry;
 	bool				 found;
@@ -609,9 +637,7 @@ insert_history_row(HeapTuple tuple,
 	int					 natts;
 
 	/* Open the history relation and obtain AccessShareLock on it. */
-	relrv = makeRangeVarFromNameList(stringToQualifiedNameList(history_relation_name));
-
-	history_relation = heap_openrv(relrv, AccessShareLock);
+	history_relation = heap_open(history_relation_oid, AccessShareLock);
 
 	/* Look up the cached data for the versioned relation OID. */
 	hash_entry = lookup_versioning_hash_entry(RelationGetRelid(relation),
@@ -637,11 +663,14 @@ insert_history_row(HeapTuple tuple,
 		 * Then check that the structure of the versioned table and the history
 		 * table is intact by comparing the cached TupleDesc with the current
 		 * one.
+		 *
+		 * Also check whether history table name has changed.
 		 */
 		if (hash_entry->natts == -1 ||
 			RelationGetRelid(history_relation) != hash_entry->history_relid ||
 			!equalTupleDescs(tupdesc, hash_entry->tupdesc) ||
-			!equalTupleDescs(history_tupdesc, hash_entry->history_tupdesc))
+			!equalTupleDescs(history_tupdesc, hash_entry->history_tupdesc) ||
+			0 != strncmp(NameStr(history_relation->rd_rel->relname), hash_entry->history_relname, NAMEDATALEN))
 		{
 			/* Mark the entry invalid. */
 			hash_entry->natts = -1;
@@ -933,7 +962,7 @@ versioning_update(TriggerData *trigdata,
 				  TypeCacheEntry *typcache,
 				  int period_attnum,
 				  const char *period_attname,
-				  const char *history_relation_argument,
+				  Oid history_relation_oid,
 				  const char *adjust_argument)
 {
 	HeapTuple		 tuple;
@@ -966,7 +995,7 @@ versioning_update(TriggerData *trigdata,
 
 	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
-	insert_history_row(history_tuple, relation, history_relation_argument,
+	insert_history_row(history_tuple, relation, history_relation_oid,
 					   period_attname);
 
 	/* Construct a period for the current row. */
@@ -995,7 +1024,7 @@ versioning_delete(TriggerData *trigdata,
 				  TypeCacheEntry *typcache,
 				  int period_attnum,
 				  const char *period_attname,
-				  const char *history_relation_argument,
+				  Oid history_relation_oid,
 				  const char *adjust_argument)
 {
 	HeapTuple	 tuple;
@@ -1028,7 +1057,7 @@ versioning_delete(TriggerData *trigdata,
 
 	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
-	insert_history_row(history_tuple, relation, history_relation_argument,
+	insert_history_row(history_tuple, relation, history_relation_oid,
 					   period_attname);
 
 	return PointerGetDatum(tuple);

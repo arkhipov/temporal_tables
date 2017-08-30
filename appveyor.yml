@@ -68,7 +68,7 @@ test_script:
 - if %pgversion%==9.4 set psqlopt=--psqldir
 - pg_regress "%psqlopt%=%pgroot%\bin"
              install no_system_period invalid_system_period no_history_table
-             no_history_system_period invalid_types invalid_system_period_values
+             no_history_system_period invalid_types invalid_system_period_values renaming
              versioning versioning_custom_system_time structure uninstall
 - if ERRORLEVEL 1 (set Outcome=Failed) else set Outcome=Passed
 - perl -e "my @s=stat('regression.out'); print 1000*($s[9]-$s[10]);" > duration
