@@ -596,7 +596,7 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 
 		hash_entry->history_relid = RelationGetRelid(history_relation);
-		memcpy(hash_entry->history_relname, NameStr(history_relation->rd_rel->relname), NAMEDATALEN);
+		strncpy_s(hash_entry->history_relname, NAMEDATALEN, NameStr(history_relation->rd_rel->relname), _TRUNCATE);
 		hash_entry->tupdesc = CreateTupleDescCopyConstr(tupdesc);
 		hash_entry->history_tupdesc = CreateTupleDescCopyConstr(history_tupdesc);
 
