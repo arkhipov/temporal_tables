@@ -15,7 +15,7 @@ environment:
   - exe: postgresql-9.4.13-1-windows-%PLATFORM%.exe
   - exe: postgresql-9.5.8-1-windows-%PLATFORM%.exe
   - exe: postgresql-9.6.4-1-windows-%PLATFORM%.exe
-  - exe: postgresql-10.0-beta3-windows-%PLATFORM%.exe
+  - exe: postgresql-10.0-beta4-windows-%PLATFORM%.exe
 
 install:
 - set dist=%exe:-x86=%
