@@ -10,6 +10,7 @@
 
 #include <math.h>
 #include <float.h>
+#include <string.h>
 
 #if PG_VERSION_NUM >= 90300
 #include "access/htup_details.h"
