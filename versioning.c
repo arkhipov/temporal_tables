@@ -6,12 +6,12 @@
  *
  * -------------------------------------------------------------------------
  */
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <string.h>
 #include "postgres.h"
 
 #include <math.h>
 #include <float.h>
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <string.h>
 
 #if PG_VERSION_NUM >= 90300
 #include "access/htup_details.h"
