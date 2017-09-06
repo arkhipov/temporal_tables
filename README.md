@@ -250,12 +250,12 @@ employees table at the same time:
 
   Time | Transaction A                                                            |  Transaction B
   ---- | ------------------------------------------------------------------------ | -------------------------------------
-    T1 | INSERT INTO employees (name, salary) VALUES ('Bernard Marx', 10000);     |
-    T2 |                                                                          | INSERT INTO employees (name, salary) VALUES ('Lenina Crowne', 7000);
-    T3 |                                                                          | COMMIT;
-    T4 | UPDATE employees SET salary = 6800 WHERE name = 'Lenina Crowne';         |
-    T5 | INSERT INTO employees (name, salary) VALUES ('Helmholtz Watson', 18500); |
-    T6 | COMMIT;                                                                  |
+  T1   | INSERT INTO employees (name, salary) VALUES ('Bernard Marx', 10000);     |
+  T2   |                                                                          | INSERT INTO employees (name, salary) VALUES ('Lenina Crowne', 7000);
+  T3   |                                                                          | COMMIT;
+  T4   | UPDATE employees SET salary = 6800 WHERE name = 'Lenina Crowne';         |
+  T5   | INSERT INTO employees (name, salary) VALUES ('Helmholtz Watson', 18500); |
+  T6   | COMMIT;                                                                  |
 
 After the inserts at T1 and T2, the employees history contains the following
 data:
