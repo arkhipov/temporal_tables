@@ -12,6 +12,15 @@ REVOKE ALL ON FUNCTION versioning() FROM PUBLIC;
 
 COMMENT ON FUNCTION versioning() IS 'System-period temporal table trigger';
 
+CREATE FUNCTION versioning2()
+RETURNS TRIGGER
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT;
+
+REVOKE ALL ON FUNCTION versioning2() FROM PUBLIC;
+
+COMMENT ON FUNCTION versioning2() IS 'System-period temporal table trigger, use OID as text for history relation';
+
 CREATE FUNCTION set_system_time(timestamptz)
 RETURNS VOID
 AS 'MODULE_PATHNAME'

@@ -11,14 +11,16 @@ environment:
   PGUSER: postgres
   PGPASSWORD: Password12!
   matrix:
-  - exe: postgresql-9.3.14-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.4.9-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.5.4-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.6.0-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.3.18-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.4.13-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.5.8-1-windows-%PLATFORM%.exe
+  - exe: postgresql-9.6.4-1-windows-%PLATFORM%.exe
+  - exe: postgresql-10.0-beta3-windows-%PLATFORM%.exe
 
 install:
 - set dist=%exe:-x86=%
-- set pgversion=%exe:~11,3%
+# http://www.databasesoup.com/2016/05/changing-postgresql-version-numbering.html
+- for /f "tokens=2 delims=-" %%A in ("%exe%") do set pgversion=%%~nA
 - echo pgversion=%pgversion%
 - if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
 - set pgroot=%pf%\PostgreSQL\%pgversion%
@@ -61,10 +63,12 @@ test_script:
 - net start postgresql%x64%-%pgversion%
 
 - appveyor AddTest Regression -Framework pg_regress -FileName sql\ -Outcome Running
-- if %pgversion:~2,1% LEQ 4 ( set psqlopt=--psqldir) else set psqlopt=--bindir
+- set psqlopt=--bindir
+- if %pgversion%==9.3 set psqlopt=--psqldir
+- if %pgversion%==9.4 set psqlopt=--psqldir
 - pg_regress "%psqlopt%=%pgroot%\bin"
              install no_system_period invalid_system_period no_history_table
-             no_history_system_period invalid_types invalid_system_period_values
+             no_history_system_period invalid_types invalid_system_period_values renaming
              versioning versioning_custom_system_time structure uninstall
 - if ERRORLEVEL 1 (set Outcome=Failed) else set Outcome=Passed
 - perl -e "my @s=stat('regression.out'); print 1000*($s[9]-$s[10]);" > duration
