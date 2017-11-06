@@ -4,11 +4,12 @@ MODULE_big = temporal_tables
 OBJS = temporal_tables.o versioning.o
 
 EXTENSION = temporal_tables
-DATA = temporal_tables--1.1.1.sql \
+DATA = temporal_tables--1.2.0.sql \
        temporal_tables--1.0.0--1.0.1.sql \
        temporal_tables--1.0.1--1.0.2.sql \
        temporal_tables--1.0.2--1.1.0.sql \
-       temporal_tables--1.1.0--1.1.1.sql
+       temporal_tables--1.1.0--1.1.1.sql \
+       temporal_tables--1.1.1--1.2.0.sql
 DOCS = README.md
 
 REGRESS = install no_system_period invalid_system_period \
