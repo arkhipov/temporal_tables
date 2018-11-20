@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 1.2.{build}
 pull_requests:
   do_not_increment_build_number: true
 os: Visual Studio 2015
@@ -11,29 +11,39 @@ environment:
   PGUSER: postgres
   PGPASSWORD: Password12!
   matrix:
-  - exe: postgresql-9.3.18-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.4.13-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.5.8-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.6.4-1-windows-%PLATFORM%.exe
-  - exe: postgresql-10.0-2-windows-x64.exe
-  - exe: postgresql-10.0-2-windows.exe
+  - pg: 9.3.24-1
+    PlatformToolset: Windows7.1SDK
+  - pg: 9.4.19-1
+    PlatformToolset: v120
+  - pg: 9.5.15-1
+    PlatformToolset: v120
+  - pg: 9.6.11-1
+    PlatformToolset: v120
+  - pg: 10.6-1
+    PlatformToolset: v120
+  - pg: 11.1-1
+    PlatformToolset: v140
+
 matrix:
   exclude:
-    - platform: x64
-      exe: postgresql-10.0-2-windows.exe
     - platform: x86
-      exe: postgresql-10.0-2-windows-x64.exe
+      pg: 11.1-1
+      PlatformToolset: v140
+
+init: # Make %exe% available for caching
+- if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
+- set exe=postgresql-%pg%-windows%x64%.exe
+- setx /m exe %exe%
 
 install:
-- set dist=%exe:-x86=%
+
 # http://www.databasesoup.com/2016/05/changing-postgresql-version-numbering.html
 - for /f "tokens=2 delims=-" %%A in ("%exe%") do set pgversion=%%~nA
 - echo pgversion=%pgversion%
-- if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
 - set pgroot=%pf%\PostgreSQL\%pgversion%
 - echo %pgroot%
 - if not exist "%pgroot%\bin" (
-    ( if not exist %exe% curl -sL -o %exe% --retry 2 --retry-delay 30 http://get.enterprisedb.com/postgresql/%dist% )
+    ( if not exist %exe% appveyor downloadfile http://get.enterprisedb.com/postgresql/%exe% )
       && %exe% --unattendedmodeui minimal
                --mode unattended
                --superpassword %PGPASSWORD%
@@ -41,28 +51,28 @@ install:
       && net stop postgresql%x64%-%pgversion%
   )
 
-cache: '%exe%'
+cache:
+- '%exe%'
 
 build_script:
-- if %pgversion%=="9.3" (set PlatformToolset=Windows7.1SDK) else set PlatformToolset=v120
+
 - msbuild /p:PlatformToolset=%PlatformToolset% /p:configuration=%CONFIGURATION% /p:platform=%PLATFORM%
           temporal_tables.vcxproj
           /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-
-test_script:
-- path %pgroot%\bin;%PATH%
 - set dll=%PLATFORM:x86=.%\%CONFIGURATION%\temporal_tables.dll
-
 - appveyor AddMessage Packing -Category Information
 - md tmp\share\extension
 - copy *.sql tmp\share\extension\
 - copy *.control tmp\share\extension\
 - copy LICENSE tmp\TEMPORAL_TABLES_LICENSE
 - md tmp\lib
+- md tmp\symbols
 - copy %dll% tmp\lib
+- copy %dll:.dll=.pdb% tmp\symbols
 - set zip=temporal_tables-%APPVEYOR_REPO_COMMIT:~0,8%-pg%pgversion%-%PLATFORM%.zip
 - 7z a -r %zip% .\tmp\* > nul
 
+test_script:
 - appveyor AddMessage "Copying the extension files to the PostgreSQL directories." -Category Information
 - 7z x %zip% "-o%pgroot%"
 
@@ -73,11 +83,13 @@ test_script:
 - set psqlopt=--bindir
 - if %pgversion%==9.3 set psqlopt=--psqldir
 - if %pgversion%==9.4 set psqlopt=--psqldir
+- set Outcome=Passed
+- path %pgroot%\bin;%PATH%
 - pg_regress "%psqlopt%=%pgroot%\bin"
              install no_system_period invalid_system_period no_history_table
              no_history_system_period invalid_types invalid_system_period_values
              versioning versioning_custom_system_time structure uninstall
-- if ERRORLEVEL 1 (set Outcome=Failed) else set Outcome=Passed
+    || Set Outcome=Failed
 - perl -e "my @s=stat('regression.out'); print 1000*($s[9]-$s[10]);" > duration
 - set /p Duration=< duration
 - appveyor UpdateTest Regression -Framework pg_regress -FileName sql\ -Outcome %Outcome% -Duration %Duration%
