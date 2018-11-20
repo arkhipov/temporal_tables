@@ -37,6 +37,12 @@
 #define nextafter(x, y) _nextafter(x, y)
 #endif
 
+#if PG_VERSION_NUM < 110000
+// https://github.com/postgres/postgres/commit/4bd1994650fddf49e717e35f1930d62208845974#diff-350265f4962fd3fb1c5c2d8667d79700
+#define DatumGetRangeTypeP DatumGetRangeType
+#define RangeTypePGetDatum RangeTypeGetDatum
+#endif
+
 PGDLLEXPORT Datum versioning(PG_FUNCTION_ARGS);
 PGDLLEXPORT Datum set_system_time(PG_FUNCTION_ARGS);
 
@@ -246,7 +252,7 @@ versioning(PG_FUNCTION_ARGS)
 						period_attname,
 						RelationGetRelationName(relation))));
 
-	period_attr = tupdesc->attrs[period_attnum - 1];
+	period_attr = TupleDescAttr(tupdesc, period_attnum - 1);
 
 	/* Check that system period attribute is not dropped. */
 	if (period_attr->attisdropped)
@@ -499,7 +505,7 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 		int					 history_attnum;
 		char				*attname;
 
-		attr = tupdesc->attrs[i];
+		attr = TupleDescAttr(tupdesc, i);
 
 		if (attr->attisdropped)
 			continue;
@@ -511,7 +517,7 @@ fill_versioning_hash_entry(VersioningHashEntry *hash_entry,
 		if (history_attnum < 0)
 			continue;
 
-		history_attr = history_tupdesc->attrs[history_attnum - 1];
+		history_attr = TupleDescAttr(history_tupdesc, history_attnum - 1);
 
 		check_attr_type(attr, history_attr, relation, history_relation);
 
@@ -759,7 +765,7 @@ deserialize_system_period(HeapTuple tuple,
 						period_attname,
 						RelationGetRelationName(relation))));
 
-	system_period = DatumGetRangeType(datum);
+	system_period = DatumGetRangeTypeP(datum);
 
 	range_deserialize(typcache, system_period, lower, upper, &empty);
 
@@ -877,7 +883,7 @@ static HeapTuple
 modify_tuple(Relation rel, HeapTuple tuple, int period_attnum, RangeType *range)
 {
 	int			 colnum[1] = { period_attnum };
-	Datum		 values[1] = { RangeTypeGetDatum(range) };
+	Datum		 values[1] = { RangeTypePGetDatum(range) };
 #if PG_VERSION_NUM >= 100000
 	bool		 nulls[1] = { false };
 	return heap_modify_tuple_by_cols(tuple, RelationGetDescr(rel), 1, colnum, values, nulls);
