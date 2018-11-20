@@ -2,17 +2,18 @@ dist: trusty
 sudo: required
 language: c
 env:
+    - PG=11
     - PG=10
     - PG=9.6
     - PG=9.5
     - PG=9.4
     - PG=9.3
-    - PG=9.2
 install:
-    - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main 10" > /etc/apt/sources.list.d/pgdg.list'
+    - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
     - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     - PGPORT=5440
     - sudo /etc/init.d/postgresql stop
+    - sudo apt-get remove -y postgresql-9.2
     - sudo apt-get -o Dir::Etc::sourcelist="/etc/apt/sources.list.d/pgdg.list" -o Dir::Etc::sourceparts='-' -o APT::Get::List-Cleanup='0' update
     - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG
     - sudo pg_createcluster -p $PGPORT $PG test
