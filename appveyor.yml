@@ -23,12 +23,21 @@ environment:
     PlatformToolset: v120
   - pg: 11.1-1
     PlatformToolset: v140
-
 matrix:
   exclude:
     - platform: x86
       pg: 11.1-1
       PlatformToolset: v140
+  allow_failures:
+    - pg: 9.3.24-1
+      platform: x64
+      PlatformToolset: Windows7.1SDK
+    - pg: 9.4.19-1
+      platform: x64
+      PlatformToolset: v120
+    - pg: 9.5.15-1
+      platform: x64
+      PlatformToolset: v120
 
 init: # Make %exe% available for caching
 - if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
