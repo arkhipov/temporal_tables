@@ -2,6 +2,10 @@ dist: trusty
 sudo: required
 language: c
 env:
+  global:
+    - PG_CPPFLAGS="-fprofile-arcs -ftest-coverage -O0"
+    - SHLIB_LINK=-lgcov
+  matrix:
     - PG=11
     - PG=10
     - PG=9.6
@@ -15,12 +19,15 @@ install:
     - sudo /etc/init.d/postgresql stop
     - sudo apt-get remove -y postgresql-9.2
     - sudo apt-get -o Dir::Etc::sourcelist="/etc/apt/sources.list.d/pgdg.list" -o Dir::Etc::sourceparts='-' -o APT::Get::List-Cleanup='0' update
-    - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG
+    - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG acl
     - sudo pg_createcluster -p $PGPORT $PG test
     - sudo sed -i '1i local all all trust' /etc/postgresql/$PG/test/pg_hba.conf
+    - setfacl -Rm u:postgres:rwx,d:u:travis:rwx $HOME
     - sudo /etc/init.d/postgresql start $PG
 script:
     - psql -p $PGPORT -U postgres postgres -xA -c 'select version()'
     - make
     - sudo make install
     - make installcheck PGUSER=postgres PGPORT=$PGPORT || (cat regression.diffs && false)
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
