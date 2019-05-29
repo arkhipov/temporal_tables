@@ -1,2 +1,8 @@
 *.o
 *.so
+data/
+.vs/
+results/
+x64/
+Release/
+Debug/

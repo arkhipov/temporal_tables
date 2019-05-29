@@ -2,24 +2,32 @@ dist: trusty
 sudo: required
 language: c
 env:
+  global:
+    - PG_CPPFLAGS="-fprofile-arcs -ftest-coverage -O0"
+    - SHLIB_LINK=-lgcov
+  matrix:
+    - PG=11
     - PG=10
     - PG=9.6
     - PG=9.5
     - PG=9.4
     - PG=9.3
-    - PG=9.2
 install:
-    - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main 10" > /etc/apt/sources.list.d/pgdg.list'
+    - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
     - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     - PGPORT=5440
     - sudo /etc/init.d/postgresql stop
+    - sudo apt-get remove -y postgresql-9.2
     - sudo apt-get -o Dir::Etc::sourcelist="/etc/apt/sources.list.d/pgdg.list" -o Dir::Etc::sourceparts='-' -o APT::Get::List-Cleanup='0' update
-    - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG
+    - sudo apt-get install postgresql-$PG postgresql-server-dev-$PG acl
     - sudo pg_createcluster -p $PGPORT $PG test
     - sudo sed -i '1i local all all trust' /etc/postgresql/$PG/test/pg_hba.conf
+    - setfacl -Rm u:postgres:rwx,d:u:travis:rwx $HOME
     - sudo /etc/init.d/postgresql start $PG
 script:
     - psql -p $PGPORT -U postgres postgres -xA -c 'select version()'
     - make
     - sudo make install
     - make installcheck PGUSER=postgres PGPORT=$PGPORT || (cat regression.diffs && false)
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

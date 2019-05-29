@@ -22,150 +22,67 @@
     <ProjectGuid>{2EB5E1F5-F370-4367-9BAD-CD241B28434C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>temporal_tables</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <pgversion Condition="$(pgversion) == ''">9.5</pgversion>
+    <PlatformToolset>v140</PlatformToolset>
+    <pgversion Condition="$(pgversion) == ''">11</pgversion>
+    <pf Condition="$(Platform)=='Win32'">$(ProgramFiles)</pf>
+    <WholeProgramOptimization Condition="'$(Configuration)'=='Release'">true</WholeProgramOptimization>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <pf Condition="$(Platform)=='x64'">$(ProgramW6432)</pf>
+    <pgroot Condition="$(pgroot)==''">$(pf)\PostgreSQL\$(pgversion)</pgroot>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <OutDir>C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\lib\</OutDir>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <OutDir>C:\Program Files\PostgreSQL\$(pgversion)\lib\</OutDir>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <PropertyGroup Label="Configuration">
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <IncludePath>$(pgroot)\include\server\port\win32_msvc;$(pgroot)\include\server\port\win32;$(pgroot)\include\server;$(pgroot)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(pgroot)\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server\port\win32_msvc;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server\port\win32;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
-    <IncludePath>C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server\port\win32_msvc;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server\port\win32;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include\server;C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\PostgreSQL\$(pgversion)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
-    <IncludePath>C:\Program Files\PostgreSQL\$(pgversion)\include\server\port\win32_msvc;C:\Program Files\PostgreSQL\$(pgversion)\include\server\port\win32;C:\Program Files\PostgreSQL\$(pgversion)\include\server;C:\Program Files\PostgreSQL\$(pgversion)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\PostgreSQL\$(pgversion)\lib;$(LibraryPath)</LibraryPath>
+    <CustomBuildAfterTargets />
+    <CustomBuildBeforeTargets>DebugSymbolsProjectOutputGroup</CustomBuildBeforeTargets>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
-    <IncludePath>C:\Program Files\PostgreSQL\$(pgversion)\include\server\port\win32_msvc;C:\Program Files\PostgreSQL\$(pgversion)\include\server\port\win32;C:\Program Files\PostgreSQL\$(pgversion)\include\server;C:\Program Files\PostgreSQL\$(pgversion)\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\PostgreSQL\$(pgversion)\lib;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <CompileAs>CompileAsC</CompileAs>
       <ExceptionHandling>false</ExceptionHandling>
+      <EnableEnhancedInstructionSet Condition="$(PlatformToolset)!='Windows7.1SDK'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <AdditionalDependencies>postgres.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)'=='Debug'">if "%CI%"=="" ( if not exist data "$(pgroot)\bin\initdb" data )</Command>
+      <Message Condition="'$(Configuration)'=='Debug'">Create cluster for debugging</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <CompileAs>CompileAsC</CompileAs>
-      <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>No</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>postgres.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <CompileAs>CompileAsC</CompileAs>
-      <ExceptionHandling>false</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>No</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>postgres.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <CompileAs>CompileAsC</CompileAs>
-      <ExceptionHandling>false</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <AdditionalDependencies>postgres.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -175,7 +92,4 @@
   <ItemGroup>
     <ClInclude Include="temporal_tables.h" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
 </Project>
