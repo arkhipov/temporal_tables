@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 1.2.{build}
 pull_requests:
   do_not_increment_build_number: true
 os: Visual Studio 2015
@@ -11,77 +11,123 @@ environment:
   PGUSER: postgres
   PGPASSWORD: Password12!
   matrix:
-  - exe: postgresql-9.3.18-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.4.13-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.5.8-1-windows-%PLATFORM%.exe
-  - exe: postgresql-9.6.4-1-windows-%PLATFORM%.exe
-  - exe: postgresql-10.0-2-windows-x64.exe
-  - exe: postgresql-10.0-2-windows.exe
+  - pg: master
+    PlatformToolset: v141
+    configuration: Debug
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  - pg: 9.4.22-1
+    PlatformToolset: v120
+  - pg: 9.5.17-1
+    PlatformToolset: v120
+  - pg: 9.6.13-1
+    PlatformToolset: v120
+  - pg: 10.8-1
+    PlatformToolset: v120
+  - pg: 11.3-1
+    PlatformToolset: v140
 matrix:
+  allow_failures:
+    - pg: master
+    - pg: 9.4.22-1
+      platform: x64
+    - pg: 9.5.17-1
+      platform: x64
   exclude:
-    - platform: x64
-      exe: postgresql-10.0-2-windows.exe
     - platform: x86
-      exe: postgresql-10.0-2-windows-x64.exe
+      pg: 11.3-1
+    - platform: x86
+      pg: master
+
+init: # Make %exe% available for caching
+- if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
+- set exe=postgresql-%pg%-windows%x64%.exe
+- setx /m exe %exe%
 
 install:
-- set dist=%exe:-x86=%
+
 # http://www.databasesoup.com/2016/05/changing-postgresql-version-numbering.html
 - for /f "tokens=2 delims=-" %%A in ("%exe%") do set pgversion=%%~nA
 - echo pgversion=%pgversion%
-- if %PLATFORM%==x64 ( set pf=%ProgramFiles%&& set x64=-x64) else set pf=%ProgramFiles(x86)%
 - set pgroot=%pf%\PostgreSQL\%pgversion%
 - echo %pgroot%
-- if not exist "%pgroot%\bin" (
-    ( if not exist %exe% curl -sL -o %exe% --retry 2 --retry-delay 30 http://get.enterprisedb.com/postgresql/%dist% )
-      && %exe% --unattendedmodeui minimal
-               --mode unattended
-               --superpassword %PGPASSWORD%
-               --servicepassword %PGPASSWORD%
-      && net stop postgresql%x64%-%pgversion%
-  )
+- ps: |
+    if ("$env:pg" -eq "master") {
+      $env:Path += ";C:\msys64\usr\bin;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64"
+      git clone -q --depth 1 https://git.postgresql.org/git/postgresql.git c:\projects\postgresql
+      pushd c:\projects\postgresql
+      perl src\tools\msvc\build.pl
+      perl src\tools\msvc\install.pl "$env:pgroot"
+      popd
+    } else {
+      if (-not (Test-Path "$env:pgroot\bin")) {
+        if (-not (Test-Path "$env:exe")) {
+          Start-FileDownload "http://get.enterprisedb.com/postgresql/$env:exe"
+        }
+        & ".\$env:exe" --unattendedmodeui none --mode unattended --superpassword "$env:PGPASSWORD" --servicepassword "$env:PGPASSWORD" | Out-Null
+        Stop-Service "postgresql$env:x64-$env:pgversion"
+      }
+    }
 
-cache: '%exe%'
+cache:
+- '%exe%'
 
 build_script:
-- if %pgversion%=="9.3" (set PlatformToolset=Windows7.1SDK) else set PlatformToolset=v120
 - msbuild /p:PlatformToolset=%PlatformToolset% /p:configuration=%CONFIGURATION% /p:platform=%PLATFORM%
           temporal_tables.vcxproj
           /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
-test_script:
-- path %pgroot%\bin;%PATH%
+after_build:
 - set dll=%PLATFORM:x86=.%\%CONFIGURATION%\temporal_tables.dll
-
 - appveyor AddMessage Packing -Category Information
 - md tmp\share\extension
 - copy *.sql tmp\share\extension\
 - copy *.control tmp\share\extension\
 - copy LICENSE tmp\TEMPORAL_TABLES_LICENSE
 - md tmp\lib
-- copy %dll% tmp\lib
+- md tmp\symbols
+- copy "%dll%" tmp\lib
+- copy "%dll:.dll=.pdb%" tmp\symbols
 - set zip=temporal_tables-%APPVEYOR_REPO_COMMIT:~0,8%-pg%pgversion%-%PLATFORM%.zip
 - 7z a -r %zip% .\tmp\* > nul
 
+test_script:
+- path %pgroot%\bin;%PATH%
 - appveyor AddMessage "Copying the extension files to the PostgreSQL directories." -Category Information
 - 7z x %zip% "-o%pgroot%"
-
+- ps: |
+    if ("$env:pg" -eq "master") {
+      Set-Content -path pg.pass -value "$env:pgpassword" -encoding ascii
+      initdb -A md5 -U "$env:PGUSER" --pwfile=pg.pass C:\pgdata
+      pg_ctl register -S demand -N "postgresql$env:x64-$env:pgversion" -D c:\pgdata
+    }
 - rem Start the database server.
 - net start postgresql%x64%-%pgversion%
 
 - appveyor AddTest Regression -Framework pg_regress -FileName sql\ -Outcome Running
-- set psqlopt=--bindir
-- if %pgversion%==9.3 set psqlopt=--psqldir
-- if %pgversion%==9.4 set psqlopt=--psqldir
-- pg_regress "%psqlopt%=%pgroot%\bin"
-             install no_system_period invalid_system_period no_history_table
-             no_history_system_period invalid_types invalid_system_period_values
-             versioning versioning_custom_system_time structure uninstall
-- if ERRORLEVEL 1 (set Outcome=Failed) else set Outcome=Passed
-- perl -e "my @s=stat('regression.out'); print 1000*($s[9]-$s[10]);" > duration
-- set /p Duration=< duration
-- appveyor UpdateTest Regression -Framework pg_regress -FileName sql\ -Outcome %Outcome% -Duration %Duration%
-- if not %Outcome%==Passed type regression.diffs
+- ps: |
+    Add-AppveyorTest Regression -Framework pg_regress -FileName sql\ -Outcome Running
+    if ("9.4" -eq "$env:pgversion") {
+      $env:psqlopt="--psqldir"
+    } else {
+      $env:psqlopt="--bindir"
+    }
+    $env:Outcome="Passed"
+    $elapsed=(Measure-Command {
+      pg_regress "$env:psqlopt=$env:pgroot\bin" --dbname=pl_regression `
+             install no_system_period invalid_system_period no_history_table `
+             no_history_system_period invalid_types invalid_system_period_values `
+             versioning versioning_custom_system_time structure uninstall 2>&1 |
+        %{ if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.Exception.Message } else { $_ } } |
+          Out-Default
+      if ($LASTEXITCODE -ne 0) {
+        $env:Outcome="Failed"
+      }
+    }).TotalMilliseconds
+    Update-AppVeyorTest Regression -Framework pg_regress -FileName sql\ -Outcome "$env:Outcome" -Duration $elapsed
+    if ("$env:Outcome" -ne "Passed") {
+      type regression.diffs
+      $host.SetShouldExit($LastExitCode)
+    }
 
 artifacts:
 - path: '*.zip'

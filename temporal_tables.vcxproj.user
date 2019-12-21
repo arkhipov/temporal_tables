@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)$(CI)'=='Debug'">
+    <OutDir>$(pgroot)\lib\</OutDir>
+    <TargetPath>$(pgroot)\lib\$(TargetName)$(TargetExt)</TargetPath>
+    <LocalDebuggerCommand>$(pgroot)\bin\postgres.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-D data</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerEnvironment>PGPORT=5433
+$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)$(CI)'=='Debug'">
+    <Link>
+      <ProgramDatabaseFile>$(OutDir)\..\symbols\$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
