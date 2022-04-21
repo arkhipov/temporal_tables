@@ -147,7 +147,7 @@ In order to make this table system-period temporal table we should first add a
 system period column:
 
 ```SQL
-ALTER TABLE employees ADD COLUMN sys_period tstzrange NOT NULL;
+ALTER TABLE employees ADD COLUMN sys_period tstzrange NOT NULL DEFAULT tstzrange(now(), null);
 ```
 
 Then we need a history table that contains archived rows of our table.  The
