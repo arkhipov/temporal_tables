@@ -1,0 +1,44 @@
+name: Build and Run Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pg-version: ["9.3", "9.4", "9.5", "9.6", "10", "11"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Postgresql and Dependencies ${{ matrix.pg-version }}
+        env:
+          PG_VERSION: ${{ matrix.pg-version }}
+        run: |
+          sudo apt-get purge -y '^postgres.*' '^libpq.*'
+          sudo apt-get install -y wget gnupg
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update -y -qq --fix-missing
+          sudo apt-get install -y \
+            gcc \
+            make \
+            build-essential \
+            postgresql-$PG_VERSION \
+            postgresql-server-dev-$PG_VERSION
+          sudo setfacl -Rm u:postgres:rwx,d:u:runner:rwx $HOME
+
+      - name: Start Postgres
+        env:
+          PG_VERSION: ${{ matrix.pg-version }}
+        run: |
+          sudo service postgresql start
+          sudo pg_lsclusters
+          sudo -u postgres psql -c 'SELECT version()'
+
+      - name: Build and Test
+        run: |
+          make
+          sudo make install
+          sudo -u postgres make installcheck
