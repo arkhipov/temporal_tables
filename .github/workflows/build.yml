@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        pg-version: ["9.3", "9.4", "9.5", "9.6", "10", "11"]
+        pg-version: ["9.3", "9.4", "9.5", "9.6", "10", "11", "12", "13", "14", "15"]
 
     steps:
       - uses: actions/checkout@v3
