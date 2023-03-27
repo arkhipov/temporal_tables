@@ -1,0 +1,132 @@
+name: Build and Run Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg-version:
+          - 9.3.25-1
+          - 9.4.26-1
+          - 9.5.25-1
+          - 9.6.24-1
+          - 10.23-1
+          - 11.19-1
+          - 12.14-1
+          - 13.10-1
+          - 14.7-1
+          - 15.2-1
+        platform:
+          - x64
+        include:
+          - pg-version: 9.3.25-1
+            platform: x86
+          - pg-version: 9.4.26-1
+            platform: x86
+          - pg-version: 9.5.25-1
+            platform: x86
+          - pg-version: 9.6.24-1
+            platform: x86
+          - pg-version: 10.23-1
+            platform: x86
+
+    steps:
+      - name: Install PostgreSQL
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $pg_full_version = "${{ matrix.pg-version }}"
+          $pg_version = $pg_full_version.Substring(0, $pg_full_version.lastIndexOf('.'))
+          if ("${{ matrix.platform }}" -eq "x64") {
+            $x64 = "-x64"
+            $pg_root = "C:\Program Files\PostgreSQL\$pg_version"
+            $release_dir = "x64\Release"
+          } else {
+            $pg_root = "C:\Program Files (x86)\PostgreSQL\$pg_version"
+            $release_dir = "Release"
+          }
+          if (("$pg_version" -eq "9.3") -or ("$pg_version" -eq "9.4")) {
+            $psql_opt = "--psqldir"
+          } else {
+            $psql_opt = "--bindir"
+          }
+
+          if ("$pg_version" -eq "14") {
+            & "C:\Program Files\PostgreSQL\14\uninstall-postgresql.exe" --mode unattended 2>&1 | Out-Default
+            Remove-Item -Recurse -Force "C:\Program Files\PostgreSQL\14"
+          }
+
+          "PG_VERSION=$pg_version" >> $env:GITHUB_ENV
+          "PG_ROOT=$pg_root" >> $env:GITHUB_ENV
+          "X64=$x64" >> $env:GITHUB_ENV
+          "RELEASE_DIR=$release_dir" >> $env:GITHUB_ENV
+          "PSQL_OPT=$psql_opt" >> $env:GITHUB_ENV
+
+          Invoke-webrequest -uri https://get.enterprisedb.com/postgresql/postgresql-${pg_full_version}-windows${x64}.exe -OutFile postgresql.exe
+
+          if ("$pg_version" -eq "9.6") {
+            & ".\postgresql.exe" --unattendedmodeui none --mode unattended --superpassword password --servicepassword password --install_runtimes 0 2>&1 | Out-Default
+          } else {
+            & ".\postgresql.exe" --unattendedmodeui none --mode unattended --superpassword password --servicepassword password 2>&1 | Out-Default
+          }
+
+      - uses: actions/checkout@v3
+
+      - uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build app for release
+        run: |
+          msbuild temporal_tables.vcxproj -t:rebuild -verbosity:minimal -property:Configuration=Release -property:Platform=${{ matrix.platform }} -property:PlatformToolset=v143
+        env:
+          pgversion: ${{ matrix.pg-version }}
+          pgroot: ${{ env.PG_ROOT }}
+
+      - name: Run Tests
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Stop-Service -Name "postgresql$env:X64-$env:PG_VERSION"
+
+          Copy ".\$env:RELEASE_DIR\temporal_tables.dll" "$env:PG_ROOT\lib"
+          Copy ".\*.sql" "$env:PG_ROOT\share\extension"
+          Copy ".\*.control" "$env:PG_ROOT\share\extension"
+
+          Set-Content -path pg.pass -value $env:PGPASSWORD -encoding ascii
+          & "$env:PG_ROOT\bin\initdb.exe" -A md5 -U postgres --pwfile=pg.pass C:\pgdata 2>&1 | Out-Default
+          & "$env:PG_ROOT\bin\pg_ctl.exe" register -S demand -N "postgresql$env:X64-$env:PG_VERSION" -D c:\pgdata 2>&1 | Out-Default
+
+          Start-Service -Name "postgresql$env:X64-$env:PG_VERSION"
+
+          & "$env:PG_ROOT\bin\pg_regress.exe" "$env:PSQL_OPT=$env:PG_ROOT\bin" --dbname=pl_regression install no_system_period invalid_system_period no_history_table no_history_system_period invalid_types invalid_system_period_values versioning versioning_custom_system_time structure uninstall 2>&1 | Out-Default
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content -Path ".\regression.out" | Out-Printer
+          }
+        env:
+          PGUSER: postgres
+          PGPASSWORD: password
+
+      - name: Package Artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          New-Item -ItemType Directory -Force -Path .\package\lib
+          New-Item -ItemType Directory -Force -Path .\package\share\extension
+
+          Copy ".\LICENSE" ".\package\TEMPORAL_TABLES_LICENSE"
+          Copy ".\$env:RELEASE_DIR\temporal_tables.dll" ".\package\lib"
+          Copy ".\*.sql" ".\package\share\extension"
+          Copy ".\*.control" ".\package\share\extension"
+
+          Compress-Archive -Path ".\package\*" -DestinationPath temporal_tables-pg${{ env.PG_VERSION }}${{ env.X64 }}.zip
+
+      - name: Deploy Artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            temporal_tables-pg${{ env.PG_VERSION }}-${{ matrix.platform }}.zip
