@@ -2,7 +2,7 @@
  *
  * temporal_tables.h
  *
- * Copyright (c) 2012-2017 Vladislav Arkhipov <vlad@arkhipov.ru>
+ * Copyright (c) 2012-2023 Vladislav Arkhipov <vlad@arkhipov.ru>
  *
  * -------------------------------------------------------------------------
  */
