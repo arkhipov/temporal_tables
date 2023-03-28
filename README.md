@@ -1,7 +1,7 @@
 Temporal Tables Extension
 =========================
 
-[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Build Status](https://travis-ci.org/arkhipov/temporal_tables.svg?branch=master)](https://travis-ci.org/arkhipov/temporal_tables) [![Build Status](https://ci.appveyor.com/api/projects/status/github/arkhipov/temporal_tables?branch=master&svg=true)](https://ci.appveyor.com/project/arkhipov/temporal-tables)
+[![PGXN version](https://badge.fury.io/pg/temporal_tables.svg)](http://badge.fury.io/pg/temporal_tables) [![Linux](https://github.com/arkhipov/temporal_tables/actions/workflows/build-nix.yml/badge.svg)](https://github.com/arkhipov/temporal_tables/actions/workflows/build-nix.yml) [![Windows](https://github.com/arkhipov/temporal_tables/actions/workflows/build-win.yml/badge.svg)](https://github.com/arkhipov/temporal_tables/actions/workflows/build-win.yml)
 
 Introduction
 ===============
@@ -96,8 +96,8 @@ command in the [Visual Studio command prompt](https://msdn.microsoft.com/en-us/l
 
     > msbuild /p:pgversion=9.4 /p:configuration=Release /p:platform=x64
 
-The platforms available are x64 and x86 and the configuration are 9.2, 9.3
-, 9.4, and 9.5.
+The platforms available are x64 and x86 and the PostgreSQL versions are 9.2, 9.3
+, 9.4, 9.5, 9.6, 10, 11, 12, 13, 14, 15.
 
 Or you can download the latest released zip [here](https://github.com/arkhipov/temporal_tables/releases/latest).
 
