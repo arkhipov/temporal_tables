@@ -9,7 +9,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pg-version: ["9.3", "9.4", "9.5", "9.6", "10", "11", "12", "13", "14", "15"]
+        pg-version:
+          - 9.3
+          - 9.4
+          - 9.5
+          - 9.6
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
 
     steps:
       - uses: actions/checkout@v3
@@ -38,8 +48,16 @@ jobs:
           sudo pg_lsclusters
           sudo -u postgres psql -c 'SELECT version()'
 
-      - name: Build and Test
+      - name: Build
         run: |
           make
           sudo make install
+
+      - name: Test
+        run: |
           sudo -u postgres make installcheck
+
+      - name: Show Test Result
+        run: |
+          cat ./regression.diffs
+        if: ${{ failure() }}

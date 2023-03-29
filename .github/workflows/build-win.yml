@@ -103,7 +103,8 @@ jobs:
 
           & "$env:PG_ROOT\bin\pg_regress.exe" "$env:PSQL_OPT=$env:PG_ROOT\bin" --dbname=pl_regression install no_system_period invalid_system_period no_history_table no_history_system_period invalid_types invalid_system_period_values versioning versioning_custom_system_time structure uninstall 2>&1 | Out-Default
           if ($LASTEXITCODE -ne 0) {
-            Get-Content -Path ".\regression.out" | Out-Printer
+            Get-Content -Path ".\regression.diffs" | Out-Printer
+            Write-Error "Tests failed"
           }
         env:
           PGUSER: postgres
