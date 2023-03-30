@@ -1,5 +1,5 @@
 # versioning extension
 comment = 'temporal tables'
-default_version = '1.2.0'
+default_version = '1.2.1'
 module_pathname = '$libdir/temporal_tables'
 relocatable = true
