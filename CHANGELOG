@@ -15,3 +15,6 @@ Version 1.1.1, released 2017-01-16
 
 Version 1.2.0, released 2017-11-07
   - PostgreSQL 10 support
+
+Version 1.2.1, released 2023-03-30
+  - PostgreSQL 12-15 support
