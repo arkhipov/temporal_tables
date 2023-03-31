@@ -1,0 +1,32 @@
+name: Build PGXN Extension
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Package extension
+        id: package
+        run: |
+          extension_name=$(grep -m 1 '"name":' META.json | sed -e 's/[[:space:]]*"name":[[:space:]]*"\([^"]*\)",/\1/')
+          extension_version=$(grep -m 1 '[[:space:]]\{8\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+
+          echo "extension_name=$extension_name" >> $GITHUB_OUTPUT
+          echo "extension_version=$extension_version" >> $GITHUB_OUTPUT
+
+          git archive --format zip --prefix=$extension_name-$extension_version/ -o $extension_name-$extension_version.zip HEAD
+
+      - name: Deploy Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            ${{ steps.package.outputs.extension_name }}-${{ steps.package.outputs.extension_version }}.zip

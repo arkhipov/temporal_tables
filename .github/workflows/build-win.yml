@@ -129,5 +129,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          fail_on_unmatched_files: true
           files: |
             temporal_tables-pg${{ env.PG_VERSION }}-${{ matrix.platform }}.zip
