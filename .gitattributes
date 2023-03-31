@@ -1,0 +1,3 @@
+*.sln export-ignore
+*.vcx* export-ignore
+.* export-ignore
