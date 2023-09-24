@@ -625,7 +625,11 @@ insert_history_row(HeapTuple tuple,
 	int					 natts;
 
 	/* Open the history relation and obtain AccessShareLock on it. */
+#if PG_VERSION_NUM >= 160000
+	relrv = makeRangeVarFromNameList(stringToQualifiedNameList(history_relation_name, NULL));
+#else
 	relrv = makeRangeVarFromNameList(stringToQualifiedNameList(history_relation_name));
+#endif
 
 	history_relation = heap_openrv(relrv, AccessShareLock);
 
@@ -927,7 +931,11 @@ versioning_insert(TriggerData *trigdata,
 	upper.inclusive = false;
 	upper.lower = false;
 
+#if PG_VERSION_NUM >= 160000
+	range = make_range(typcache, &lower, &upper, false, NULL);
+#else
 	range = make_range(typcache, &lower, &upper, false);
+#endif
 
 	return PointerGetDatum(modify_tuple(trigdata->tg_relation, trigdata->tg_trigtuple, period_attnum, range));
 }
@@ -978,7 +986,11 @@ versioning_update(TriggerData *trigdata,
 	/* Adjust if needed. */
 	adjust_system_period(typcache, &lower, &upper, adjust_argument, relation);
 
+#if PG_VERSION_NUM >= 160000
+	range = make_range(typcache, &lower, &upper, false, NULL);
+#else
 	range = make_range(typcache, &lower, &upper, false);
+#endif
 
 	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
@@ -993,7 +1005,11 @@ versioning_update(TriggerData *trigdata,
 	upper.infinite = true;
 	upper.inclusive = false;
 
+#if PG_VERSION_NUM >= 160000
+	range = make_range(typcache, &lower, &upper, false, NULL);
+#else
 	range = make_range(typcache, &lower, &upper, false);
+#endif
 
 	return PointerGetDatum(modify_tuple(relation, trigdata->tg_newtuple, period_attnum, range));
 }
@@ -1040,7 +1056,11 @@ versioning_delete(TriggerData *trigdata,
 	/* Adjust if needed. */
 	adjust_system_period(typcache, &lower, &upper, adjust_argument, relation);
 
+#if PG_VERSION_NUM >= 160000
+	range = make_range(typcache, &lower, &upper, false, NULL);
+#else
 	range = make_range(typcache, &lower, &upper, false);
+#endif
 
 	history_tuple = modify_tuple(relation, tuple, period_attnum, range);
 
