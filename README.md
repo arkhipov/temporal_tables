@@ -50,7 +50,7 @@ Installation
 ===============
 
 If you are running Linux, the easiest way to install the extension is to to use
-the [PGXN client](http://pgxnclient.projects.pgfoundry.org/).
+the [PGXN client](https://pgxn.github.io/pgxnclient/).
 
     $ pgxn install temporal_tables
 
