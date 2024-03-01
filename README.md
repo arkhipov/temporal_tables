@@ -125,6 +125,10 @@ system-period temporal tables behaviour:
 
     versioning(<system_period_column_name>, <history_table_name>, <adjust>)
 
+It is possible to use a spécific shema, even the extension was created in the public schéma :
+
+    versioning(<system_period_column_name>, <schema>.<history_table_name>, <adjust>)
+
 The function must be fired before INSERT or UPDATE or DELETE on a
 system-period temporal table.  You are to specify a system period column name, a
 history table name and "adjust" parameter (see Updating data section for
