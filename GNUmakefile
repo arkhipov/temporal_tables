@@ -12,7 +12,7 @@ DATA = temporal_tables--1.2.2.sql \
        temporal_tables--1.1.1--1.2.0.sql \
        temporal_tables--1.2.0--1.2.1.sql \
        temporal_tables--1.2.1--1.2.2.sql
-DOCS = README.md
+DOCS = temporal_tables.md
 
 REGRESS = install no_system_period invalid_system_period \
           no_history_table no_history_system_period invalid_types \
