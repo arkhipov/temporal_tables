@@ -11,6 +11,9 @@
 #include <math.h>
 #include <float.h>
 
+#if PG_VERSION_NUM >= 19000
+#include "utils/hsearch.h"
+#endif
 #if PG_VERSION_NUM >= 120000
 #include "access/relation.h"
 #include "access/table.h"
@@ -165,7 +168,11 @@ static Datum versioning_delete(TriggerData *trigdata,
 							   const char *adjust_argument);
 
 static void init_versioning_hash_table();
+#if PG_VERSION_NUM >= 190000
+static void *hash_entry_alloc(Size size, __attribute__((unused)) void *alloc_arg);
+#else
 static void *hash_entry_alloc(Size size);
+#endif
 
 static VersioningHashEntry *lookup_versioning_hash_entry(Oid relid,
 														 bool *found);
@@ -1070,8 +1077,13 @@ versioning_delete(TriggerData *trigdata,
 	return PointerGetDatum(tuple);
 }
 
+#if PG_VERSION_NUM >= 190000
+static void *
+hash_entry_alloc(Size size, __attribute__((unused)) void *alloc_arg)
+#else
 static void *
 hash_entry_alloc(Size size)
+#endif
 {
 	return MemoryContextAllocZero(TopMemoryContext, size);
 }
